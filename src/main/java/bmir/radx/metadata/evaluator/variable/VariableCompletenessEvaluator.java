@@ -1,9 +1,9 @@
 package bmir.radx.metadata.evaluator.variable;
 
-import bmir.radx.metadata.evaluator.EvaluationConstant;
 import bmir.radx.metadata.evaluator.EvaluationResult;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -12,12 +12,22 @@ import static bmir.radx.metadata.evaluator.EvaluationConstant.FULL_COMPLETENESS_
 @Component
 public class VariableCompletenessEvaluator{
   public void evaluate(List<VariableMetadataRow> rows, Consumer<EvaluationResult> consumer){
+    List<Integer> incompleteVariables = new ArrayList<>();
     var nonEmptyRowCount = rows.stream()
-        .filter(this::isNonEmptyRow)
+        .filter(row -> {
+          var isComplete = isCompleteRow(row);
+          if (!isComplete) {
+            incompleteVariables.add(row.rowNumber());
+          }
+          return isComplete;
+        })
         .count();
 
     var ratio = ((double)nonEmptyRowCount / rows.size()) * 100;
     consumer.accept(new EvaluationResult(FULL_COMPLETENESS_VARIABLE_RATIO, String.valueOf(ratio)));
+    if(!incompleteVariables.isEmpty()){
+      consumer.accept(new EvaluationResult(FULL_COMPLETENESS_VARIABLE_RATIO, String.valueOf(ratio)));
+    }
   }
 
   private boolean nonEmptyStringCell(String value){
@@ -31,17 +41,27 @@ public class VariableCompletenessEvaluator{
   private boolean nonEmptyIntCell(Integer value){
     return value!=null;
   }
+  private boolean nonEmptyBooleanCell(Boolean value){
+    return value!= null;
+  }
 
-  private boolean isNonEmptyRow(VariableMetadataRow row) {
-    return nonEmptyStringCell(row.dataVariable()) &&
-        nonEmptyIntCell(row.fileCount()) &&
+  private boolean isCompleteRow(VariableMetadataRow row) {
+    boolean areCoreFieldsComplete = nonEmptyIntCell(row.fileCount()) &&
         nonEmptyIntCell(row.studyCount()) &&
         nonEmptyListCell(row.dbGaPIDs()) &&
         nonEmptyListCell(row.filesPerStudy()) &&
-        nonEmptyListCell(row.radxProgram()) &&
-        nonEmptyStringCell(row.label()) &&
-        nonEmptyStringCell(row.concept()) &&
-        nonEmptyStringCell(row.responses()) &&
-        nonEmptyStringCell(row.radxGlobalPrompt());
+        nonEmptyListCell(row.radxProgram());
+
+    if (!row.isTier1CDE()) {
+      // If isTier1CDE is false, only core fields need to be non-empty
+      return areCoreFieldsComplete;
+    } else {
+      // If isTier1CDE is true, all fields must be non-empty
+      return areCoreFieldsComplete &&
+          nonEmptyStringCell(row.label()) &&
+          nonEmptyStringCell(row.concept()) &&
+          nonEmptyStringCell(row.responses()) &&
+          nonEmptyStringCell(row.radxGlobalPrompt());
+    }
   }
 }

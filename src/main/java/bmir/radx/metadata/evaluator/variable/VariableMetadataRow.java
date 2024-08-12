@@ -5,7 +5,7 @@ import java.util.List;
 public record VariableMetadataRow(
     Integer rowNumber,
     String dataVariable,
-    boolean isTier1CDE,
+    Boolean isTier1CDE,
     Integer fileCount,
     Integer studyCount,
     List<String> dbGaPIDs,

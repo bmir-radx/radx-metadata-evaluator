@@ -1,5 +1,9 @@
-package bmir.radx.metadata.evaluator.variable;
+package bmir.radx.metadata.evaluator;
 
+import bmir.radx.metadata.evaluator.study.StudyMetadataRow;
+import bmir.radx.metadata.evaluator.variable.AllVariablesRow;
+import bmir.radx.metadata.evaluator.variable.GlobalCodeBookRow;
+import bmir.radx.metadata.evaluator.variable.VariableMetadataRow;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.stereotype.Component;
 
@@ -7,14 +11,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static bmir.radx.metadata.evaluator.variable.HeaderName.*;
+import static bmir.radx.metadata.evaluator.HeaderName.*;
 
 @Component
 public class SpreadsheetReader {
@@ -55,6 +56,20 @@ public class SpreadsheetReader {
           .skip(1) // Skip header row
           .filter(row -> !isRowEmpty(row, headerMap))
           .map(row -> mapRowToAllVariables(row, headerMap))
+          .collect(Collectors.toList());
+    }
+  }
+
+  public List<StudyMetadataRow> readStudyMetadata(Path filePath) throws IOException {
+    try (var fileInputStream = new FileInputStream(filePath.toFile());
+         var workbook = WorkbookFactory.create(fileInputStream)) {
+      var sheet = workbook.getSheetAt(0);
+      Map<HeaderName, Integer> headerMap = getHeaderMap(sheet.getRow(0));
+
+      return StreamSupport.stream(sheet.spliterator(), false)
+          .skip(1) // Skip header row
+          .filter(row -> !isRowEmpty(row, headerMap))
+          .map(row -> mapRowToStudiesMetadata(row, headerMap))
           .collect(Collectors.toList());
     }
   }
@@ -108,11 +123,11 @@ public class SpreadsheetReader {
   }
 
   private GlobalCodeBookRow mapRowToGlobalCodeBook(Row row, Map<HeaderName, Integer> headerMap) {
-    int rowNumber = row.getRowNum() + 1; // Adjust row number to exclude header row
-    String concept = getCellValueAsString(row.getCell(headerMap.get(HeaderName.CONCEPT)));
-    String radxGlobalPrompt = getCellValueAsString(row.getCell(headerMap.get(HeaderName.RADX_GLOBAL_PROMPT)));
-    String variable = getCellValueAsString(row.getCell(headerMap.get(HeaderName.VARIABLE)));
-    String responses = getCellValueAsString(row.getCell(headerMap.get(HeaderName.RESPONSES)));
+    int rowNumber = getRowNumber(row);
+    String concept = getCellValueAsString(row.getCell(headerMap.get(CONCEPT)));
+    String radxGlobalPrompt = getCellValueAsString(row.getCell(headerMap.get(RADX_GLOBAL_PROMPT)));
+    String variable = getCellValueAsString(row.getCell(headerMap.get(VARIABLE)));
+    String responses = getCellValueAsString(row.getCell(headerMap.get(RESPONSES)));
 
     return new GlobalCodeBookRow(
         rowNumber,
@@ -141,6 +156,44 @@ public class SpreadsheetReader {
     );
   }
 
+  private StudyMetadataRow mapRowToStudiesMetadata(Row row, Map<HeaderName, Integer> headerMap){
+    return new StudyMetadataRow(
+        getRowNumber(row),
+        getStringCellValue(row, headerMap, STUDY_PROGRAM),
+        getStringCellValue(row, headerMap, STUDY_PHS),
+        getStringCellValue(row, headerMap, STUDY_TITLE),
+        getStringCellValue(row, headerMap, DESCRIPTION),
+        getStringCellValue(row, headerMap, RADX_ACKNOWLEDGEMENTS),
+        getStringCellValue(row, headerMap, NIH_GRANT_NUMBER),
+        getStringCellValue(row, headerMap, RAPIDS_LINK),
+        getDateCellValue(row, headerMap, STUDY_START_DATE),
+        getDateCellValue(row, headerMap, STUDY_END_DATE),
+        getDateCellValue(row, headerMap, STUDY_RELEASE_DATE),
+        getDateCellValue(row, headerMap, UPDATED_AT),
+        getStringCellValue(row, headerMap, FOA_NUMBER),
+        getStringCellValue(row, headerMap, FOA_URL),
+        getStringCellValue(row, headerMap, CONTACT_PI_PROJECT_LEADER),
+        getStringCellValue(row, headerMap, STUDY_DOI),
+        getStringCellValue(row, headerMap, DCC_PROVIDED_PUBLICATION_URLS),
+        getStringCellValue(row, headerMap, CLINICALTRIALS_GOV_URL),
+        getStringCellValue(row, headerMap, STUDY_WEBSITE_URL),
+        getStringCellValue(row, headerMap, STUDY_DESIGN),
+        getStringCellValue(row, headerMap, DATA_TYPES),
+        getStringCellValue(row, headerMap, STUDY_DOMAIN),
+        getStringCellValue(row, headerMap, NIH_INSTITUTE_OR_CENTER),
+        getBooleanCellValue(row, headerMap, MULTI_CENTER_STUDY, "TRUE"),
+        getStringCellValue(row, headerMap, MULTI_CENTER_SITES),
+        getStringCellValue(row, headerMap, KEYWORDS),
+        getStringCellValue(row, headerMap, DATA_COLLECTION_METHOD),
+        getIntegerCellValue(row, headerMap, ESTIMATED_COHORT_SIZE),
+        getStringCellValue(row, headerMap, STUDY_POPULATION_FOCUS),
+        getStringCellValue(row, headerMap, SPECIES),
+        getStringCellValue(row, headerMap, CONSENT_DATA_USE_LIMITATIONS),
+        getStringCellValue(row, headerMap, STUDY_STATUS),
+        getBooleanCellValue(row, headerMap, HAS_DATA_FILES, "Yes")
+    );
+  }
+
   private String getCellValueAsString(Cell cell) {
     if (cell == null) {
       return null;
@@ -155,10 +208,43 @@ public class SpreadsheetReader {
     return "null".equals(cellValue) ? null : cellValue;
   }
 
+  private int getRowNumber(Row row){
+    return row.getRowNum() + 1;
+  }
+
   private static boolean isRowEmpty(Row row, Map<HeaderName, Integer> headerMap) {
     return headerMap.values().stream()
         .map(row::getCell)
         .allMatch(cell -> cell == null || cell.getCellType() == CellType.BLANK);
   }
 
+  private String getStringCellValue(Row row, Map<HeaderName, Integer> headerMap, HeaderName header) {
+    Integer columnIndex = headerMap.get(header);
+    if (columnIndex == null) return null;
+    Cell cell = row.getCell(columnIndex);
+    return cell != null ? cell.getStringCellValue() : null;
+  }
+
+  private Date getDateCellValue(Row row, Map<HeaderName, Integer> headerMap, HeaderName header) {
+    Integer columnIndex = headerMap.get(header);
+    if (columnIndex == null) return null;
+    Cell cell = row.getCell(columnIndex);
+    return cell != null ? cell.getDateCellValue() : null;
+  }
+
+  private Integer getIntegerCellValue(Row row, Map<HeaderName, Integer> headerMap, HeaderName header) {
+    Integer columnIndex = headerMap.get(header);
+    if (columnIndex == null) return null;
+    Cell cell = row.getCell(columnIndex);
+    return cell != null ? Integer.valueOf(cell.getStringCellValue()) : null;
+  }
+
+  private Boolean getBooleanCellValue(Row row, Map<HeaderName, Integer> headerMap, HeaderName header, String trueValue) {
+    Integer columnIndex = headerMap.get(header);
+    if (columnIndex == null) return null;
+    Cell cell = row.getCell(columnIndex);
+    if (cell == null) return null;
+    String value = cell.getStringCellValue();
+    return trueValue.equalsIgnoreCase(value);
+  }
 }

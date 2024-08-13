@@ -1,6 +1,7 @@
 package bmir.radx.metadata.evaluator;
 
 import bmir.radx.metadata.evaluator.dataFile.BundleFilesEvaluator;
+import bmir.radx.metadata.evaluator.study.StudyEvaluator;
 import bmir.radx.metadata.evaluator.variable.VariableEvaluator;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Component;
@@ -37,14 +38,16 @@ public class EvaluateCommand implements Callable<Integer> {
   private Path study;
 
   private final String variableSheetName = "Variable Metadata Report";
-  private final String dataFileSheetName = "Data Dile Metadata Report";
+  private final String dataFileSheetName = "Data File Metadata Report";
   private final String studySheetName = "Study Metadata Report";
   private final VariableEvaluator variableEvaluator;
+  private final StudyEvaluator studyEvaluator;
   private final BundleFilesEvaluator dataFileEvaluator;
   private final EvaluationSheetReportWriter writer;
 
-  public EvaluateCommand(VariableEvaluator variableEvaluator, BundleFilesEvaluator dataFileEvaluator, EvaluationSheetReportWriter writer) {
+  public EvaluateCommand(VariableEvaluator variableEvaluator, StudyEvaluator studyEvaluator, BundleFilesEvaluator dataFileEvaluator, EvaluationSheetReportWriter writer) {
     this.variableEvaluator = variableEvaluator;
+    this.studyEvaluator = studyEvaluator;
     this.dataFileEvaluator = dataFileEvaluator;
     this.writer = writer;
   }
@@ -107,6 +110,14 @@ public class EvaluateCommand implements Callable<Integer> {
       }
       var report = variableEvaluator.evaluate(variable);
       reports.put(variableSheetName, report);
+    }
+
+    if (study != null) {
+      if(!Files.exists(study)){
+        throw new FileNotFoundException("Study Metadata File not found: " + study);
+      }
+      var report = studyEvaluator.evaluate(study);
+      reports.put(studySheetName, report);
     }
 
     if (datafile != null){

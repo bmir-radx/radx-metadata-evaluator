@@ -2,6 +2,7 @@ package bmir.radx.metadata.evaluator.variable;
 
 import bmir.radx.metadata.evaluator.EvaluationReport;
 import bmir.radx.metadata.evaluator.EvaluationResult;
+import bmir.radx.metadata.evaluator.SpreadsheetReader;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;

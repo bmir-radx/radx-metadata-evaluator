@@ -13,7 +13,7 @@ public class EvaluationSheetReportWriter {
   public void writeReportHeader(Sheet sheet) {
     Row headerRow = sheet.createRow(0);
     Cell headerCell0 = headerRow.createCell(0);
-    headerCell0.setCellValue("EVALUATION TYPE");
+    headerCell0.setCellValue("Evaluation Type");
     Cell headerCell1 = headerRow.createCell(1);
     headerCell1.setCellValue("Content");
   }

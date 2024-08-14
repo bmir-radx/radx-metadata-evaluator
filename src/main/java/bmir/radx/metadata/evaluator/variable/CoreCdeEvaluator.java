@@ -43,7 +43,7 @@ public class CoreCdeEvaluator {
     consumer.accept(new EvaluationResult(NUMBER_OF_TIER_1_CDES, String.valueOf(coreCde)));
     consumer.accept(new EvaluationResult(NUMBER_OF_INCORRECT_CORE_CDES, String.valueOf(incorrectCoreCdeCount)));
     if(incorrectCoreCdeCount !=0 ){
-      consumer.accept(new EvaluationResult(INCORRECT_CORE_CDES_LIST, incorrectCoreCdes.toString()));
+      consumer.accept(new EvaluationResult(INCORRECT_CORE_CDES_ROWS, incorrectCoreCdes.toString()));
     }
   }
 

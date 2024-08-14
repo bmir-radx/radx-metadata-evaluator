@@ -29,7 +29,7 @@ public class StudyCompletenessEvaluator {
     var ratio = ((double) nonEmptyRowCount / rows.size()) * 100;
     consumer.accept(new EvaluationResult(FULL_COMPLETENESS_STUDY_RATIO, String.valueOf(ratio)));
     if (!incompleteStudies.isEmpty()) {
-      consumer.accept(new EvaluationResult(INCOMPLETE_STUDY_LIST, incompleteStudies.toString()));
+      consumer.accept(new EvaluationResult(INCOMPLETE_STUDY_ROWS, incompleteStudies.toString()));
     }
 
     rows.forEach(row -> {

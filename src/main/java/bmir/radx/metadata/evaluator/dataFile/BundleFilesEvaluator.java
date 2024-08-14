@@ -105,7 +105,7 @@ public class BundleFilesEvaluator {
     var workbook = new XSSFWorkbook();
     var sheet = workbook.createSheet(sheetName);
     writer.writeReportHeader(sheet);
-    writer.writeSingleReport(report, sheet);
+    writer.writeSingleReport(report, sheet, workbook, sheetName);
     var outPath = getOutputPath(file, out);
     var outputStream = Files.newOutputStream(outPath);
     workbook.write(outputStream);

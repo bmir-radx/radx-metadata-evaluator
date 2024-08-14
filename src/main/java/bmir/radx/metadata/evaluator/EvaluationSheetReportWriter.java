@@ -61,10 +61,11 @@ public class EvaluationSheetReportWriter {
         writeDistributionData(hiddenSheet, distributionMap);
 
         // Create the chart using the data written to the hidden sheet
-        createChart(sheet, hiddenSheet, distributionMap.size(), evaluationType, currentRowForChart, 0);
+        var title = evaluationType.replace("_", " ");
+        createChart(sheet, hiddenSheet, distributionMap.size(), title, currentRowForChart, 0);
 
         // Adjust the row position for the next chart
-        currentRowForChart += 15; // Move down 15 rows for the next chart (adjust based on chart size)
+        currentRowForChart += 15; // Move down 15 rows for the next chart
       }
     }
   }

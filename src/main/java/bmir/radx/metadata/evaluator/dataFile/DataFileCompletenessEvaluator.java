@@ -44,6 +44,7 @@ public class DataFileCompletenessEvaluator {
     }
     //update optional filed count with attribute value fields
     optionalFieldCount = optionalFieldCount + attributeValueFields.size();
+    int totalFieldCount = requiredFieldCount + recommendedFieldCount + optionalFieldCount;
 
     int elementCount = templateSchemaArtifact.getElementNames().size();
 
@@ -70,12 +71,12 @@ public class DataFileCompletenessEvaluator {
     int filledAvFieldsCount = filledAvFields(attributeValueFields);
     int filledOptionalFieldCount = filledOptionalFields.size() + filledAvFieldsCount;
     int filledElementCount = filledElements.size();
+    int totalFilledFieldCount = filledRequiredFieldCount + filledRecommendedFieldCount + filledOptionalFieldCount;
 
     var requiredCompleteness = ((double)filledRequiredFieldCount/requiredFieldCount) * 100;
     var recommendedCompleteness = ((double)filledRecommendedFieldCount/recommendedFieldCount) * 100;
     var optionalCompleteness = ((double) filledOptionalFieldCount/ optionalFieldCount) * 100;
-    var overallCompleteness = ((double) (filledRequiredFieldCount + filledRecommendedFieldCount + filledOptionalFieldCount)
-        /(requiredFieldCount + recommendedFieldCount + optionalFieldCount)) * 100;
+    var overallCompleteness = ((double) totalFilledFieldCount / totalFieldCount) * 100;
     var elementCompleteness = ((double) filledElementCount / elementCount) * 100;
 
     handler.accept(new EvaluationResult(TOTAL_REQUIRED_FIELD, String.valueOf(requiredFieldCount)));
@@ -93,6 +94,8 @@ public class DataFileCompletenessEvaluator {
     handler.accept(new EvaluationResult(FILLED_OPTIONAL_FIELDS, filledOptionalFields.toString()));
     handler.accept(new EvaluationResult(OPTIONAL_FIELDS_COMPLETION_RATE, String.valueOf(optionalCompleteness)));
 
+    handler.accept(new EvaluationResult(TOTAL_FIELDS_COUNT, String.valueOf(totalFieldCount)));
+    handler.accept(new EvaluationResult(TOTAL_FILLED_FIELDS_COUNT, String.valueOf(totalFilledFieldCount)));
     handler.accept(new EvaluationResult(OVERALL_COMPLETION_RATE, String.valueOf(overallCompleteness)));
 
     handler.accept(new EvaluationResult(FILLED_ELEMENTS, filledElements.toString()));

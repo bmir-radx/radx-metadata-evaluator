@@ -32,12 +32,12 @@ public class StudyCompletenessEvaluator {
       consumer.accept(new EvaluationResult(INCOMPLETE_STUDY_ROWS, incompleteStudies.toString()));
     }
 
-    rows.forEach(row -> {
-          var completenessRate = calculateCompletionRate(row);
-          CompletenessContainer.updateCompletenessDistribution(completenessRate, overallCompleteness);
-            }
-        );
-    consumer.accept(new EvaluationResult(OVERALL_COMPLETENESS_DISTRIBUTION, overallCompleteness.toString()));
+//    rows.forEach(row -> {
+//          var completenessRate = calculateCompletionRate(row);
+//          CompletenessContainer.updateCompletenessDistribution(completenessRate, overallCompleteness);
+//            }
+//        );
+//    consumer.accept(new EvaluationResult(OVERALL_COMPLETENESS_DISTRIBUTION, overallCompleteness.toString()));
   }
 
   private boolean isCompleteStudyRow(StudyMetadataRow row) {

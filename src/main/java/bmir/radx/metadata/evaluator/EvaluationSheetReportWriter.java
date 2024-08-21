@@ -11,12 +11,11 @@ import org.apache.poi.xssf.usermodel.XSSFChart;
 import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
 import org.apache.poi.xssf.usermodel.XSSFDrawing;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.openxmlformats.schemas.drawingml.x2006.chart.CTBarSer;
+import org.openxmlformats.schemas.drawingml.x2006.chart.CTDLbls;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Component
 public class EvaluationSheetReportWriter {
@@ -27,15 +26,6 @@ public class EvaluationSheetReportWriter {
     Cell headerCell1 = headerRow.createCell(1);
     headerCell1.setCellValue("Content");
   }
-
-//  public void writeSingleReport(EvaluationReport report, Sheet sheet) {
-//    int rowIndex = 1; // Starting row index for data
-//    for (EvaluationResult r : report.results()) {
-//      Row row = sheet.createRow(rowIndex++);
-//      row.createCell(0).setCellValue(r.getEvaluationConstant().name());
-//      row.createCell(1).setCellValue(r.getContent());
-//    }
-//  }
 
   public void writeSingleReport(EvaluationReport report, Sheet sheet, Workbook workbook, String sheetName) {
     int rowIndex = 1; // Starting row index for data
@@ -50,7 +40,7 @@ public class EvaluationSheetReportWriter {
       // Check if the evaluation type ends with "DISTRIBUTION"
       if (evaluationType.endsWith("DISTRIBUTION")) {
         // Extract values from the map format string
-        Map<String, Integer> distributionMap = parseDistribution(r.getContent());
+        var distributionMap = parseDistribution(r.getContent());
 
         // Create a hidden sheet and write the distribution data there
         String hiddenSheetName = sheetName.replace("Metadata Report", "").trim() + "_" + evaluationType;
@@ -81,32 +71,32 @@ public class EvaluationSheetReportWriter {
   }
 
   // Method to extract values from the distribution string
-  private Map<String, Integer> parseDistribution(String distributionText) {
-    distributionText = distributionText.replaceAll("[\\{\\}]", ""); // Remove curly braces
+  private Map<Integer, Integer> parseDistribution(String distributionText) {
+    distributionText = distributionText.replaceAll("[\\{\\}]", "");
     String[] pairs = distributionText.split(",\\s*");
-    Map<String, Integer> map = new LinkedHashMap<>();
+    Map<Integer, Integer> map = new TreeMap<>();
+    int maxKey = 0;
     for (String pair : pairs) {
       String[] keyValue = pair.split("=");
-      String key = keyValue[0].trim();
+      int key = Integer.parseInt(keyValue[0].trim());
       int value = Integer.parseInt(keyValue[1].trim());
       map.put(key, value);
-    }
-
-    // Create a sorted map based on the custom order
-    Map<String, Integer> sortedMap = new LinkedHashMap<>();
-    List<String> order = Arrays.asList("0%-20%", "20%-40%", "40%-60%", "60%-80%", "80%-100%");
-    for (String key : order) {
-      if (map.containsKey(key)) {
-        sortedMap.put(key, map.get(key));
+      if (key > maxKey) {
+        maxKey = key;
       }
     }
-    return sortedMap;
+    // Ensure all keys from 0 to maxKey are present, with default value 0 if missing
+    for (int i = 0; i <= maxKey; i++) {
+      map.putIfAbsent(i, 0);
+    }
+
+    return map;
   }
 
   // Method to write distribution data into a hidden sheet
-  private void writeDistributionData(Sheet hiddenSheet, Map<String, Integer> distributionMap) {
+  private void writeDistributionData(Sheet hiddenSheet, Map<Integer, Integer> distributionMap) {
     int rowNum = 0;
-    for (Map.Entry<String, Integer> entry : distributionMap.entrySet()) {
+    for (Map.Entry<Integer, Integer> entry : distributionMap.entrySet()) {
       Row row = hiddenSheet.createRow(rowNum++);
       row.createCell(0).setCellValue(entry.getKey());
       row.createCell(1).setCellValue(entry.getValue());
@@ -127,14 +117,31 @@ public class EvaluationSheetReportWriter {
     chart.setTitleOverlay(false);
 
     // Create data sources for the chart from the hidden sheet
-    XDDFDataSource<String> xs = XDDFDataSourcesFactory.fromStringCellRange(hiddenSheet, new CellRangeAddress(0, dataSize - 1, 0, 0));
+    XDDFDataSource<Double> xs = XDDFDataSourcesFactory.fromNumericCellRange(hiddenSheet, new CellRangeAddress(0, dataSize - 1, 0, 0));
     XDDFNumericalDataSource<Double> ys = XDDFDataSourcesFactory.fromNumericCellRange(hiddenSheet, new CellRangeAddress(0, dataSize - 1, 1, 1));
+
+    // Check if data sources have correct range and types
+    if (xs == null || ys == null || dataSize <= 0) {
+      // Log the issue or handle it appropriately
+      System.out.println("No data available for chart generation.");
+      return;
+    }
 
     // Create bar chart data
     var data = (XDDFBarChartData) chart.createData(ChartTypes.BAR, chart.createCategoryAxis(AxisPosition.BOTTOM), chart.createValueAxis(AxisPosition.LEFT));
     data.setBarDirection(BarDirection.COL);
     var series = (XDDFBarChartData.Series) data.addSeries(xs, ys);
     series.setTitle(title, null);
+
+    // Set axis titles
+    data.getCategoryAxis().setTitle("Filled Field Number");
+    data.getValueAxes().get(0).setTitle("File Number");
+
+    // Set axis titles
+    var bottomAxis = (XDDFCategoryAxis) data.getCategoryAxis();
+    bottomAxis.setTitle("Filled Field Number");
+    var leftAxis = data.getValueAxes().get(0);
+    leftAxis.setTitle("File Number");
 
     // Plot the chart data
     chart.plot(data);

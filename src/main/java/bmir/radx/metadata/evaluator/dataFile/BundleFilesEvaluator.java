@@ -59,18 +59,18 @@ public class BundleFilesEvaluator {
   }
 
   private void processSingleFile(Path filepath, Path out,
-                                 Map<String, Integer> overallCompleteness,
-                                 Map<String, Integer> requiredCompleteness,
-                                 Map<String, Integer> recommendedCompleteness){
+                                 Map<Integer, Integer> overallCompleteness,
+                                 Map<Integer, Integer> requiredCompleteness,
+                                 Map<Integer, Integer> recommendedCompleteness){
     try {
       var singleReport = evaluateSingleFile(filepath, out);
-      var overallCompletionRate = getOverallCompletionRate(singleReport, OVERALL_COMPLETION_RATE);
-      CompletenessContainer.updateCompletenessDistribution(overallCompletionRate, overallCompleteness);
+      var overallCompletion = getOverallCompletionRate(singleReport, TOTAL_FILLED_FIELDS_COUNT);
+      CompletenessContainer.updateCompletenessDistribution(overallCompletion, overallCompleteness);
 
-      var requiredCompletionRate = getOverallCompletionRate(singleReport, REQUIRED_FIELDS_COMPLETION_RATE);
+      var requiredCompletionRate = getOverallCompletionRate(singleReport, FILLED_REQUIRED_FIELDS_COUNT);
       CompletenessContainer.updateCompletenessDistribution(requiredCompletionRate, requiredCompleteness);
 
-      var recommendedCompletionRate = getOverallCompletionRate(singleReport, RECOMMENDED_FIELDS_COMPLETION_RATE);
+      var recommendedCompletionRate = getOverallCompletionRate(singleReport, FILLED_RECOMMENDED_FIELDS_COUNT);
       CompletenessContainer.updateCompletenessDistribution(recommendedCompletionRate, recommendedCompleteness);
     } catch (IOException e) {
       System.err.println("Error processing file " + filepath + ": " + e.getMessage());
@@ -101,14 +101,14 @@ public class BundleFilesEvaluator {
     var templateNode = getTemplateNode();
     var report = singleFileEvaluator.evaluate(templateNode.toString(), instanceNode.toString());
 
-    //write and save single data file metadata evaluation report
-    var workbook = new XSSFWorkbook();
-    var sheet = workbook.createSheet(sheetName);
-    writer.writeReportHeader(sheet);
-    writer.writeSingleReport(report, sheet, workbook, sheetName);
-    var outPath = getOutputPath(file, out);
-    var outputStream = Files.newOutputStream(outPath);
-    workbook.write(outputStream);
+//    //write and save single data file metadata evaluation report
+//    var workbook = new XSSFWorkbook();
+//    var sheet = workbook.createSheet(sheetName);
+//    writer.writeReportHeader(sheet);
+//    writer.writeSingleReport(report, sheet, workbook, sheetName);
+//    var outPath = getOutputPath(file, out);
+//    var outputStream = Files.newOutputStream(outPath);
+//    workbook.write(outputStream);
 
     return singleFileEvaluator.evaluate(templateNode.toString(), instanceNode.toString());
   }
@@ -126,10 +126,10 @@ public class BundleFilesEvaluator {
     }
   }
 
-  private double getOverallCompletionRate(EvaluationReport report, EvaluationConstant evaluationConstant) {
+  private Integer getOverallCompletionRate(EvaluationReport report, EvaluationConstant evaluationConstant) {
     for (var result : report.results()) {
       if (evaluationConstant.equals(result.getEvaluationConstant())) {
-        return Double.parseDouble(result.getContent());
+        return Integer.valueOf(result.getContent());
       }
     }
     throw new IllegalArgumentException("OVERALL_COMPLETION_RATE not found in the report.");

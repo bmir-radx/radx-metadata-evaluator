@@ -33,12 +33,12 @@ public class EvaluationSheetReportWriter {
 
     for (EvaluationResult r : report.results()) {
       Row row = sheet.createRow(rowIndex++);
-      String evaluationType = r.getEvaluationConstant().name();
+      String evaluationType = r.getEvaluationConstant().getDisplayName();
       row.createCell(0).setCellValue(evaluationType);
       row.createCell(1).setCellValue(r.getContent());
 
       // Check if the evaluation type ends with "DISTRIBUTION"
-      if (evaluationType.endsWith("DISTRIBUTION")) {
+      if (evaluationType.endsWith("Distribution")) {
         // Extract values from the map format string
         var distributionMap = parseDistribution(r.getContent());
 

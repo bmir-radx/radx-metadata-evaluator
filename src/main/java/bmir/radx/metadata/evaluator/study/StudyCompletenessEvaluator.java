@@ -1,21 +1,25 @@
 package bmir.radx.metadata.evaluator.study;
 
-import bmir.radx.metadata.evaluator.CompletenessContainer;
 import bmir.radx.metadata.evaluator.EvaluationResult;
+import bmir.radx.metadata.evaluator.sharedComponents.CompletionRateChecker;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.function.Consumer;
 
 import static bmir.radx.metadata.evaluator.EvaluationConstant.*;
 
 @Component
 public class StudyCompletenessEvaluator {
+  private final CompletionRateChecker completionRateChecker;
+
+  public StudyCompletenessEvaluator(CompletionRateChecker completionRateChecker) {
+    this.completionRateChecker = completionRateChecker;
+  }
+
   public void evaluate(List<StudyMetadataRow> rows, Consumer<EvaluationResult> consumer) {
     List<Integer> incompleteStudies = new ArrayList<>();
-    var overallCompleteness = CompletenessContainer.initiateCompletenessMap();
+    var overallCompleteness = new HashMap<String, Integer>();
     var nonEmptyRowCount = rows.stream()
         .filter(row -> {
           var isComplete = isCompleteStudyRow(row);
@@ -27,7 +31,7 @@ public class StudyCompletenessEvaluator {
         .count();
 
     var ratio = ((double) nonEmptyRowCount / rows.size()) * 100;
-    consumer.accept(new EvaluationResult(FULL_COMPLETENESS_STUDY_RATIO, String.valueOf(ratio)));
+    consumer.accept(new EvaluationResult(FULL_COMPLETENESS_STUDY_RATIO, String.format("%.2f%%",ratio)));
     if (!incompleteStudies.isEmpty()) {
       consumer.accept(new EvaluationResult(INCOMPLETE_STUDY_ROWS, incompleteStudies.toString()));
     }
@@ -38,6 +42,14 @@ public class StudyCompletenessEvaluator {
 //            }
 //        );
 //    consumer.accept(new EvaluationResult(OVERALL_COMPLETENESS_DISTRIBUTION, overallCompleteness.toString()));
+
+    // Calculate completeness rate for each row and update overallCompleteness map
+    rows.forEach(row -> {
+      var completenessRate = calculateCompletionRate(row);
+      updateCompletenessDistribution(completenessRate, overallCompleteness);
+    });
+
+    consumer.accept(new EvaluationResult(OVERALL_COMPLETION_RATE, overallCompleteness.toString()));
   }
 
   private boolean isCompleteStudyRow(StudyMetadataRow row) {
@@ -113,6 +125,12 @@ public class StudyCompletenessEvaluator {
     if (nonEmptyBooleanCell(row.hasDataFiles())) nonEmptyFields++;
 
     return (double) nonEmptyFields / totalFields * 100;
+  }
+
+  private void updateCompletenessDistribution(double completenessRate, Map<String, Integer> overallCompleteness) {
+    int range = (int) (completenessRate / 10) * 10; // Calculate range as 0, 10, 20, ..., 90
+    String key = range + "-" + (range + 10) + "%"; // Format the key as "0-10%", "10-20%", etc.
+    overallCompleteness.merge(key, 1, Integer::sum); // Increment the count for the corresponding range
   }
 
   private boolean nonEmptyStringCell(String value) {

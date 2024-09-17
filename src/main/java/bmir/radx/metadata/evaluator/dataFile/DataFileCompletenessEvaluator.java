@@ -15,7 +15,12 @@ import static bmir.radx.metadata.evaluator.EvaluationConstant.*;
 
 @Component
 public class DataFileCompletenessEvaluator {
-  private final FieldsCollector fieldsCollector = new FieldsCollector();
+  private final FieldsCollector fieldsCollector;
+
+  public DataFileCompletenessEvaluator(FieldsCollector fieldsCollector) {
+    this.fieldsCollector = fieldsCollector;
+  }
+
   public void evaluate(TemplateSchemaArtifact templateSchemaArtifact, TemplateInstanceValuesReporter templateInstanceValuesReporter, Consumer<EvaluationResult> handler){
     var templateReporter = new TemplateReporter(templateSchemaArtifact);
     var values = templateInstanceValuesReporter.getValues();
@@ -46,7 +51,7 @@ public class DataFileCompletenessEvaluator {
     optionalFieldCount = optionalFieldCount + attributeValueFields.size();
     int totalFieldCount = requiredFieldCount + recommendedFieldCount + optionalFieldCount;
 
-    int elementCount = templateSchemaArtifact.getElementNames().size();
+    int elementCount = templateSchemaArtifact.getElementKeys().size();
 
     for (Map.Entry<String, FieldValues> fieldEntry : values.entrySet()) {
       var path = fieldEntry.getKey();
@@ -79,28 +84,28 @@ public class DataFileCompletenessEvaluator {
     var overallCompleteness = ((double) totalFilledFieldCount / totalFieldCount) * 100;
     var elementCompleteness = ((double) filledElementCount / elementCount) * 100;
 
-    handler.accept(new EvaluationResult(TOTAL_REQUIRED_FIELD, String.valueOf(requiredFieldCount)));
+    handler.accept(new EvaluationResult(TOTAL_REQUIRED_FIELDS, String.valueOf(requiredFieldCount)));
     handler.accept(new EvaluationResult(FILLED_REQUIRED_FIELDS_COUNT, String.valueOf(filledRequiredFieldCount)));
     handler.accept(new EvaluationResult(FILLED_REQUIRED_FIELDS, filledRequiredFields.toString()));
-    handler.accept(new EvaluationResult(REQUIRED_FIELDS_COMPLETION_RATE, String.valueOf(requiredCompleteness)));
+    handler.accept(new EvaluationResult(REQUIRED_FIELDS_COMPLETION_RATE, String.format("%.2f%%",requiredCompleteness)));
 
-    handler.accept(new EvaluationResult(TOTAL_RECOMMENDED_FIELD, String.valueOf(recommendedFieldCount)));
+    handler.accept(new EvaluationResult(TOTAL_RECOMMENDED_FIELDS, String.valueOf(recommendedFieldCount)));
     handler.accept(new EvaluationResult(FILLED_RECOMMENDED_FIELDS_COUNT,String.valueOf(filledRecommendedFieldCount)));
     handler.accept(new EvaluationResult(FILLED_RECOMMENDED_FIELDS, filledRecommendedFields.toString()));
-    handler.accept(new EvaluationResult(RECOMMENDED_FIELDS_COMPLETION_RATE, String.valueOf(recommendedCompleteness)));
+    handler.accept(new EvaluationResult(RECOMMENDED_FIELDS_COMPLETION_RATE, String.format("%.2f%%",recommendedCompleteness)));
 
-    handler.accept(new EvaluationResult(TOTAL_OPTIONAL_FIELD, String.valueOf(optionalFieldCount)));
+    handler.accept(new EvaluationResult(TOTAL_OPTIONAL_FIELDS, String.valueOf(optionalFieldCount)));
     handler.accept(new EvaluationResult(FILLED_OPTIONAL_FIELDS_COUNT, String.valueOf(filledOptionalFieldCount)));
     handler.accept(new EvaluationResult(FILLED_OPTIONAL_FIELDS, filledOptionalFields.toString()));
-    handler.accept(new EvaluationResult(OPTIONAL_FIELDS_COMPLETION_RATE, String.valueOf(optionalCompleteness)));
+    handler.accept(new EvaluationResult(OPTIONAL_FIELDS_COMPLETION_RATE, String.format("%.2f%%",optionalCompleteness)));
 
     handler.accept(new EvaluationResult(TOTAL_FIELDS_COUNT, String.valueOf(totalFieldCount)));
     handler.accept(new EvaluationResult(TOTAL_FILLED_FIELDS_COUNT, String.valueOf(totalFilledFieldCount)));
-    handler.accept(new EvaluationResult(OVERALL_COMPLETION_RATE, String.valueOf(overallCompleteness)));
+    handler.accept(new EvaluationResult(OVERALL_COMPLETION_RATE, String.format("%.2f%%",overallCompleteness)));
 
     handler.accept(new EvaluationResult(FILLED_ELEMENTS, filledElements.toString()));
     handler.accept(new EvaluationResult(FILLED_ELEMENTS_COUNT, String.valueOf(filledElementCount)));
-    handler.accept(new EvaluationResult(ELEMENT_COMPLETION_RATE, String.valueOf(elementCompleteness)));
+    handler.accept(new EvaluationResult(ELEMENT_COMPLETION_RATE, String.format("%.2f%%",elementCompleteness)));
   }
 
   private boolean isRequiredField(Optional<ValueConstraints> valueConstraints){
@@ -114,8 +119,8 @@ public class DataFileCompletenessEvaluator {
   private int filledAvFields(List<AttributeValueFieldValues> avFields){
     var filledAvFields = new HashSet<String>();
     for(var avField: avFields){
-      var fieldValus = avField.fieldValues();
-      if(!fieldsCollector.isEmptyField(fieldValus)){
+      var fieldValues = avField.fieldValues();
+      if(!fieldsCollector.isEmptyField(fieldValues)){
         filledAvFields.add(avField.specificationPath());
       }
     }
@@ -124,7 +129,7 @@ public class DataFileCompletenessEvaluator {
 
   public Collection<String> getEmptyElements(Map<String, Integer> combinedFillingReport, TemplateSchemaArtifact templateSchemaArtifact){
     Set<String> emptyElements = new HashSet<>();
-    var childElements = templateSchemaArtifact.getElementNames();
+    var childElements = templateSchemaArtifact.getElementKeys();
     for(var childElement: childElements){
       var currentElementArtifact = templateSchemaArtifact.getElementSchemaArtifact(childElement);
       if(isEmptyElements(combinedFillingReport, currentElementArtifact, "/" + childElement)){
@@ -135,8 +140,8 @@ public class DataFileCompletenessEvaluator {
   }
 
   private boolean isEmptyElements(Map<String, Integer> combinedFillingReport, ElementSchemaArtifact elementSchemaArtifact, String path){
-    var childFields = elementSchemaArtifact.getFieldNames();
-    var childElements = elementSchemaArtifact.getElementNames();
+    var childFields = elementSchemaArtifact.getFieldKeys();
+    var childElements = elementSchemaArtifact.getElementKeys();
     for(var childField: childFields){
       var currentPath = path + "/" + childField;
       System.out.println(currentPath);
@@ -160,7 +165,7 @@ public class DataFileCompletenessEvaluator {
   }
 
   private Collection<String> getAllElements(TemplateSchemaArtifact templateSchemaArtifact){
-    var childElements = templateSchemaArtifact.getElementNames();
+    var childElements = templateSchemaArtifact.getElementKeys();
     return new HashSet<>(childElements);
   }
 }

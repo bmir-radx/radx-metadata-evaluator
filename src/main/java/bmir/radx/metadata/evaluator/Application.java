@@ -5,9 +5,11 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.ComponentScan;
 import picocli.CommandLine;
 
-@SpringBootApplication(scanBasePackages = "bmir.radx.metadata.evaluator")
+@SpringBootApplication
+@ComponentScan(basePackages = {"bmir.radx.metadata.evaluator", "edu.stanford.bmir.radx.metadata.validator.lib"})
 public class Application implements CommandLineRunner {
 	private final CommandLine.IFactory iFactory;
 	@Autowired

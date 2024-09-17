@@ -13,16 +13,19 @@ import java.util.function.Consumer;
 @Component
 public class StudyEvaluator {
   private final StudyCompletenessEvaluator completenessEvaluator;
+  private final StudyValidityEvaluator studyValidityEvaluator;
 
-  public StudyEvaluator(StudyCompletenessEvaluator completenessEvaluator) {
+  public StudyEvaluator(StudyCompletenessEvaluator completenessEvaluator, StudyValidityEvaluator studyValidityEvaluator) {
     this.completenessEvaluator = completenessEvaluator;
+    this.studyValidityEvaluator = studyValidityEvaluator;
   }
 
   public EvaluationReport evaluate(Path metadataFilePath) {
     var results = new ArrayList<EvaluationResult>();
     Consumer<EvaluationResult> consumer = results::add;
-    var studyMetadataReader = new SpreadsheetReader();
 
+//    studyValidityEvaluator.evaluate(metadataFilePath, consumer);
+    var studyMetadataReader = new SpreadsheetReader();
     try {
       var studyMetadataRows = studyMetadataReader.readStudyMetadata(metadataFilePath);
       completenessEvaluator.evaluate(studyMetadataRows, consumer);

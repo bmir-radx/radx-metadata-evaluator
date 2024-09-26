@@ -1,6 +1,6 @@
 package bmir.radx.metadata.evaluator.dataFile;
 
-import bmir.radx.metadata.evaluator.EvaluationResult;
+import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import edu.stanford.bmir.radx.metadata.validator.lib.*;
 import org.metadatacenter.artifacts.model.core.ElementSchemaArtifact;
 import org.metadatacenter.artifacts.model.core.TemplateSchemaArtifact;
@@ -99,8 +99,8 @@ public class DataFileCompletenessEvaluator {
     handler.accept(new EvaluationResult(FILLED_OPTIONAL_FIELDS, filledOptionalFields.toString()));
     handler.accept(new EvaluationResult(OPTIONAL_FIELDS_COMPLETION_RATE, String.format("%.2f%%",optionalCompleteness)));
 
-    handler.accept(new EvaluationResult(TOTAL_FIELDS_COUNT, String.valueOf(totalFieldCount)));
-    handler.accept(new EvaluationResult(TOTAL_FILLED_FIELDS_COUNT, String.valueOf(totalFilledFieldCount)));
+    handler.accept(new EvaluationResult(TOTAL_FIELDS, String.valueOf(totalFieldCount)));
+    handler.accept(new EvaluationResult(TOTAL_FILLED_FIELDS, String.valueOf(totalFilledFieldCount)));
     handler.accept(new EvaluationResult(OVERALL_COMPLETION_RATE, String.format("%.2f%%",overallCompleteness)));
 
     handler.accept(new EvaluationResult(FILLED_ELEMENTS, filledElements.toString()));

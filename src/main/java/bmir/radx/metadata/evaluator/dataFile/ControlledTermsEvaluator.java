@@ -1,6 +1,6 @@
 package bmir.radx.metadata.evaluator.dataFile;
 
-import bmir.radx.metadata.evaluator.EvaluationResult;
+import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import edu.stanford.bmir.radx.metadata.validator.lib.FieldValues;
 import edu.stanford.bmir.radx.metadata.validator.lib.TemplateInstanceValuesReporter;
 import org.metadatacenter.artifacts.model.visitors.TemplateReporter;

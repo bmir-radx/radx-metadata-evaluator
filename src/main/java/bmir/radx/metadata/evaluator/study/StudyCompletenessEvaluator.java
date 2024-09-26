@@ -1,55 +1,101 @@
 package bmir.radx.metadata.evaluator.study;
 
-import bmir.radx.metadata.evaluator.EvaluationResult;
+import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.sharedComponents.CompletionRateChecker;
+import bmir.radx.metadata.evaluator.sharedComponents.FieldRequirement;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.function.Consumer;
 
 import static bmir.radx.metadata.evaluator.EvaluationConstant.*;
+import static bmir.radx.metadata.evaluator.sharedComponents.FieldRequirement.*;
 
 @Component
 public class StudyCompletenessEvaluator {
   private final CompletionRateChecker completionRateChecker;
+  private final StudyTemplateGetter studyTemplateGetter;
 
-  public StudyCompletenessEvaluator(CompletionRateChecker completionRateChecker) {
+
+  public StudyCompletenessEvaluator(CompletionRateChecker completionRateChecker, StudyTemplateGetter studyTemplateGetter) {
     this.completionRateChecker = completionRateChecker;
+    this.studyTemplateGetter = studyTemplateGetter;
   }
 
   public void evaluate(List<StudyMetadataRow> rows, Consumer<EvaluationResult> consumer) {
-    List<Integer> incompleteStudies = new ArrayList<>();
-    var overallCompleteness = new HashMap<String, Integer>();
-    var nonEmptyRowCount = rows.stream()
-        .filter(row -> {
-          var isComplete = isCompleteStudyRow(row);
-          if (!isComplete) {
-            incompleteStudies.add(row.rowNumber());
-          }
-          return isComplete;
-        })
-        .count();
+    var templateSchemaArtifact = studyTemplateGetter.getTemplate();
 
-    var ratio = ((double) nonEmptyRowCount / rows.size()) * 100;
-    consumer.accept(new EvaluationResult(FULL_COMPLETENESS_STUDY_RATIO, String.format("%.2f%%",ratio)));
-    if (!incompleteStudies.isEmpty()) {
-      consumer.accept(new EvaluationResult(INCOMPLETE_STUDY_ROWS, incompleteStudies.toString()));
+    Map<FieldRequirement, Map<Integer, Integer>> completenessDistribution = new HashMap<>();
+    for (var requirement : FieldRequirement.values()) {
+      completenessDistribution.put(requirement, new HashMap<>());
     }
 
+    int totalRequiredFields = 0;
+    int totalOptionalFields = 0;
+    int totalRecommendedFields = 0;
+    for(var row: rows){
+      var result = completionRateChecker.checkCompletionRate(row, templateSchemaArtifact);
+      totalRequiredFields = result.totalRequiredFields();
+      totalRecommendedFields = result.totalRecommendedFields();
+      totalOptionalFields = result.totalOptionalFields();
+
+      Map<FieldRequirement, Integer> filledFieldsMap = new HashMap<>();
+      filledFieldsMap.put(REQUIRED, result.filledRequiredFields());
+      filledFieldsMap.put(RECOMMENDED, result.filledRecommendedFields());
+      filledFieldsMap.put(OPTIONAL, result.filledOptionalFields());
+
+      for (var requirement : FieldRequirement.values()) {
+        int filledFields = filledFieldsMap.get(requirement);
+        Map<Integer, Integer> distributionMap = completenessDistribution.get(requirement);
+        distributionMap.put(
+            filledFields,
+            distributionMap.getOrDefault(filledFields, 0) + 1
+        );
+      }
+    }
+
+    int totalFields = totalRequiredFields + totalRecommendedFields + totalOptionalFields;
+    consumer.accept(new EvaluationResult(TOTAL_NUMBER_OF_STUDIES, String.valueOf(rows.size())));
+    consumer.accept(new EvaluationResult(TOTAL_FIELDS, String.valueOf(totalFields)));
+    consumer.accept(new EvaluationResult(TOTAL_REQUIRED_FIELDS, String.valueOf(totalRequiredFields)));
+    consumer.accept(new EvaluationResult(REQUIRED_FIELDS_COMPLETENESS_DISTRIBUTION, completenessDistribution.get(REQUIRED).toString()));
+    consumer.accept(new EvaluationResult(TOTAL_RECOMMENDED_FIELDS, String.valueOf(totalRecommendedFields)));
+    consumer.accept(new EvaluationResult(RECOMMENDED_FIELDS_COMPLETENESS_DISTRIBUTION, completenessDistribution.get(RECOMMENDED).toString()));
+    consumer.accept(new EvaluationResult(TOTAL_OPTIONAL_FIELDS, String.valueOf(totalOptionalFields)));
+    consumer.accept(new EvaluationResult(OPTIONAL_FIELDS_COMPLETENESS_DISTRIBUTION, completenessDistribution.get(OPTIONAL).toString()));
+
+//    List<Integer> incompleteStudies = new ArrayList<>();
+//    var overallCompleteness = new HashMap<String, Integer>();
+//    var nonEmptyRowCount = rows.stream()
+//        .filter(row -> {
+//          var isComplete = isCompleteStudyRow(row);
+//          if (!isComplete) {
+//            incompleteStudies.add(row.rowNumber());
+//          }
+//          return isComplete;
+//        })
+//        .count();
+//
+//    var ratio = ((double) nonEmptyRowCount / rows.size()) * 100;
+//    consumer.accept(new EvaluationResult(FULL_COMPLETENESS_STUDY_RATIO, String.format("%.2f%%",ratio)));
+//    if (!incompleteStudies.isEmpty()) {
+//      consumer.accept(new EvaluationResult(INCOMPLETE_STUDY_ROWS, incompleteStudies.toString()));
+//    }
+//
 //    rows.forEach(row -> {
 //          var completenessRate = calculateCompletionRate(row);
-//          CompletenessContainer.updateCompletenessDistribution(completenessRate, overallCompleteness);
+//          CompletenessContainer.updateDistribution(completenessRate, overallCompleteness);
 //            }
 //        );
 //    consumer.accept(new EvaluationResult(OVERALL_COMPLETENESS_DISTRIBUTION, overallCompleteness.toString()));
-
-    // Calculate completeness rate for each row and update overallCompleteness map
-    rows.forEach(row -> {
-      var completenessRate = calculateCompletionRate(row);
-      updateCompletenessDistribution(completenessRate, overallCompleteness);
-    });
-
-    consumer.accept(new EvaluationResult(OVERALL_COMPLETION_RATE, overallCompleteness.toString()));
+//
+//    // Calculate completeness rate for each row and update overallCompleteness map
+//    rows.forEach(row -> {
+//      var completenessRate = calculateCompletionRate(row);
+//      updateDistribution(completenessRate, overallCompleteness);
+//    });
+//
+//    consumer.accept(new EvaluationResult(OVERALL_COMPLETION_RATE, overallCompleteness.toString()));
   }
 
   private boolean isCompleteStudyRow(StudyMetadataRow row) {
@@ -68,7 +114,7 @@ public class StudyCompletenessEvaluator {
         nonEmptyStringCell(row.foaUrl()) &&
         nonEmptyStringCell(row.contactPiProjectLeader()) &&
         nonEmptyStringCell(row.studyDoi()) &&
-        nonEmptyStringCell(row.dccProvidedPublicationUrls()) &&
+        nonEmptyStringCell(row.cdccProvidedPublicationUrls()) &&
         nonEmptyStringCell(row.clinicalTrialsGovUrl()) &&
         nonEmptyStringCell(row.studyWebsiteUrl()) &&
         nonEmptyStringCell(row.studyDesign()) &&
@@ -106,7 +152,7 @@ public class StudyCompletenessEvaluator {
     if (nonEmptyStringCell(row.foaUrl())) nonEmptyFields++;
     if (nonEmptyStringCell(row.contactPiProjectLeader())) nonEmptyFields++;
     if (nonEmptyStringCell(row.studyDoi())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.dccProvidedPublicationUrls())) nonEmptyFields++;
+    if (nonEmptyStringCell(row.cdccProvidedPublicationUrls())) nonEmptyFields++;
     if (nonEmptyStringCell(row.clinicalTrialsGovUrl())) nonEmptyFields++;
     if (nonEmptyStringCell(row.studyWebsiteUrl())) nonEmptyFields++;
     if (nonEmptyStringCell(row.studyDesign())) nonEmptyFields++;
@@ -162,5 +208,4 @@ public class StudyCompletenessEvaluator {
       throw new IllegalArgumentException("Rate out of expected range: " + rate);
     }
   }
-
 }

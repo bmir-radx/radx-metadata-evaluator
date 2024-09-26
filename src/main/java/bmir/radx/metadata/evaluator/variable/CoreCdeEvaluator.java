@@ -1,6 +1,6 @@
 package bmir.radx.metadata.evaluator.variable;
 
-import bmir.radx.metadata.evaluator.EvaluationResult;
+import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.SpreadsheetReader;
 import org.springframework.stereotype.Component;
 
@@ -39,7 +39,7 @@ public class CoreCdeEvaluator {
       totalVar++;
     }
 
-    consumer.accept(new EvaluationResult(TOTAL_NUMBER_OF_VARIABLE, String.valueOf(totalVar)));
+    consumer.accept(new EvaluationResult(TOTAL_NUMBER_OF_VARIABLES, String.valueOf(totalVar)));
     consumer.accept(new EvaluationResult(NUMBER_OF_TIER_1_CDES, String.valueOf(coreCde)));
     consumer.accept(new EvaluationResult(NUMBER_OF_INCORRECT_CORE_CDES, String.valueOf(incorrectCoreCdeCount)));
     if(incorrectCoreCdeCount !=0 ){

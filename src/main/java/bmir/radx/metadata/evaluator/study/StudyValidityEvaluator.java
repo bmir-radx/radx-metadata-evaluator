@@ -1,9 +1,8 @@
 package bmir.radx.metadata.evaluator.study;
 
-import bmir.radx.metadata.evaluator.EvaluationConstant;
-import bmir.radx.metadata.evaluator.EvaluationResult;
-import bmir.radx.metadata.evaluator.thirdParty.SpreadsheetUpdater;
-import bmir.radx.metadata.evaluator.thirdParty.SpreadsheetValidatorReport;
+import bmir.radx.metadata.evaluator.result.EvaluationResult;
+import bmir.radx.metadata.evaluator.util.SpreadsheetUpdater;
+import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
 import bmir.radx.metadata.evaluator.thirdParty.SpreadsheetValidatorService;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -13,7 +12,10 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.function.Consumer;
+
+import static bmir.radx.metadata.evaluator.EvaluationConstant.ERRORS_NUMBER;
 
 @Component
 public class StudyValidityEvaluator {
@@ -37,14 +39,14 @@ public class StudyValidityEvaluator {
     this.service = service;
   }
 
-  public void evaluate(Path metadataFilePath, Consumer<EvaluationResult> consumer){
+  public List<SpreadsheetValidationResult> evaluate(Path metadataFilePath, Consumer<EvaluationResult> consumer){
     var workbook = getWorkbook(metadataFilePath);
     spreadsheetUpdater.addMetadataTab(workbook, templateTitle, templateVersion, templateCreatedOn, templateID);
-    spreadsheetUpdater.saveWorkbookToFile(workbook, metadataFilePath);
+    spreadsheetUpdater.patchMetadata(workbook, metadataFilePath);
     var spreadsheetValidatorResponse = service.validateSpreadsheet(metadataFilePath.toString());
-    for (var report: spreadsheetValidatorResponse.reports()){
-      consumer.accept(new EvaluationResult(EvaluationConstant.ERROR, formatReport(report)));
-    }
+    var validationReports = spreadsheetValidatorResponse.reports();
+    consumer.accept(new EvaluationResult(ERRORS_NUMBER, String.valueOf(validationReports.size())));
+    return validationReports;
   }
 
   private Workbook getWorkbook(Path metadataFilePath){
@@ -55,7 +57,7 @@ public class StudyValidityEvaluator {
     }
   }
 
-  private String formatReport(SpreadsheetValidatorReport report){
+  private String formatReport(SpreadsheetValidationResult report){
     return String.format(
         "In row %d of column '%s', the value '%s' encountered an error of type '%s'. Suggested repair: %s",
         report.row(),

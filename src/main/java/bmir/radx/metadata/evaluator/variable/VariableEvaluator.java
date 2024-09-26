@@ -1,13 +1,15 @@
 package bmir.radx.metadata.evaluator.variable;
 
 import bmir.radx.metadata.evaluator.EvaluationReport;
-import bmir.radx.metadata.evaluator.EvaluationResult;
+import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.SpreadsheetReader;
+import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 @Component
@@ -22,7 +24,7 @@ public class VariableEvaluator {
     this.consistentEvaluator = consistentEvaluator;
   }
 
-  public EvaluationReport evaluate(Path metadataFilePath) {
+  public EvaluationReport<SpreadsheetValidationResult> evaluate(Path metadataFilePath) {
 //  public EvaluationReport evaluate(FileInputStream integratedFileInputStream) {
     var results = new ArrayList<EvaluationResult>();
     Consumer<EvaluationResult> consumer = results::add;
@@ -39,6 +41,6 @@ public class VariableEvaluator {
       throw new RuntimeException(e);
     }
 
-    return new EvaluationReport(results);
+    return new EvaluationReport<>(results, List.of());
   }
 }

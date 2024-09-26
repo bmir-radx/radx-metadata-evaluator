@@ -3,6 +3,7 @@ package bmir.radx.metadata.evaluator.study;
 import java.util.Date;
 
 public record StudyMetadataRow(
+    //TODO change data type of URLs from string to URL
     Integer rowNumber,
     String studyProgram,
     String studyPHS,
@@ -19,7 +20,7 @@ public record StudyMetadataRow(
     String foaUrl,
     String contactPiProjectLeader,
     String studyDoi,
-    String dccProvidedPublicationUrls,
+    String cdccProvidedPublicationUrls,
     String clinicalTrialsGovUrl,
     String studyWebsiteUrl,
     String studyDesign,

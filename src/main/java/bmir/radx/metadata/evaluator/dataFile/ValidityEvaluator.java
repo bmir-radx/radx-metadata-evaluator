@@ -1,6 +1,7 @@
 package bmir.radx.metadata.evaluator.dataFile;
 
-import bmir.radx.metadata.evaluator.EvaluationResult;
+import bmir.radx.metadata.evaluator.result.EvaluationResult;
+import bmir.radx.metadata.evaluator.result.JsonValidationResult;
 import edu.stanford.bmir.radx.metadata.validator.lib.*;
 import org.springframework.stereotype.Component;
 
@@ -20,7 +21,7 @@ public class ValidityEvaluator {
   }
 
 
-  public void evaluate(String templateString, String instanceString, Consumer<EvaluationResult> consumer) {
+  public List<JsonValidationResult> evaluate(String templateString, String instanceString, Consumer<EvaluationResult> consumer) {
     var validator = validatorFactory.createValidator(new LiteralFieldValidators(new HashMap<>()));
     ValidationReport report = null;
     try {
@@ -29,11 +30,16 @@ public class ValidityEvaluator {
       throw new RuntimeException("Error validating metadata");
     }
     int errorCount = 0;
-      List<String> errors = new ArrayList<>();
+      List<JsonValidationResult> errors = new ArrayList<>();
       for(var result: report.results()){
         if(result.validationLevel().equals(ValidationLevel.ERROR)){
           errorCount += 1;
-          errors.add(result.message());
+          //TODO need to add fileName and suggestion
+          errors.add(new JsonValidationResult("",
+              result.pointer(),
+              result.validationName(),
+              result.message(),
+              ""));
         }
       }
 //      consumer.accept(new EvaluationResult(VALIDATION_ERROR_COUNT, String.valueOf(errorCount)));
@@ -42,5 +48,6 @@ public class ValidityEvaluator {
       } else{
         consumer.accept(new EvaluationResult(VALIDATION_ERROR, "null"));
     }
+      return errors;
   }
 }

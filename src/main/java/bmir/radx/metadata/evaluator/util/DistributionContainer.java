@@ -1,10 +1,10 @@
-package bmir.radx.metadata.evaluator;
+package bmir.radx.metadata.evaluator.util;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class CompletenessContainer {
-//  public static Map<String, Integer> initiateCompletenessMap(){
+public class DistributionContainer {
+//  public static Map<String, Integer> initiateIntMap(){
 //    var completeness = new HashMap<String, Integer>();
 //    completeness.put("0%-20%", 0);
 //    completeness.put("20%-40%", 0);
@@ -14,15 +14,24 @@ public class CompletenessContainer {
 //    return completeness;
 //  }
 
-  public static Map<Integer, Integer> initiateCompletenessMap(){
+  public static Map<Integer, Integer> initiateIntMap(){
     return new HashMap<>();
   }
 
-  public static void updateCompletenessDistribution(Integer completeFieldsNumber, Map<Integer, Integer> completeness){
-    completeness.merge(completeFieldsNumber, 1, Integer::sum);
+  public static Map<String, Integer> initiateStringMap(){
+    return new HashMap<>();
   }
 
-//  public static void updateCompletenessDistribution(double rate, Map<String, Integer> completeness){
+  public static void updateDistribution(Integer completeFieldsNumber, Map<Integer, Integer> distribution){
+    distribution.merge(completeFieldsNumber, 1, Integer::sum);
+  }
+
+  public static void updateDistribution(Map<String, Integer> ctFreq, Map<String, Integer> distribution){
+    ctFreq.forEach((ct, freq) -> distribution.merge(ct, freq, Integer::sum));
+  }
+
+
+//  public static void updateDistribution(double rate, Map<String, Integer> completeness){
 //    String requiredRange = getRange(rate);
 //    completeness.put(requiredRange, completeness.get(requiredRange) + 1);
 //  }

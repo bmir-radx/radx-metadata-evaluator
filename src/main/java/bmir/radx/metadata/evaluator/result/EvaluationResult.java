@@ -1,6 +1,8 @@
-package bmir.radx.metadata.evaluator;
+package bmir.radx.metadata.evaluator.result;
 
-public class EvaluationResult {
+import bmir.radx.metadata.evaluator.EvaluationConstant;
+
+public class EvaluationResult implements Result{
   private EvaluationConstant evaluationConstant;
   private String content;
 

@@ -1,6 +1,6 @@
 package bmir.radx.metadata.evaluator.dataFile;
 
-import bmir.radx.metadata.evaluator.EvaluationResult;
+import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import org.metadatacenter.artifacts.model.core.InstanceArtifact;
 import org.metadatacenter.artifacts.model.core.TemplateInstanceArtifact;
 import org.springframework.stereotype.Component;

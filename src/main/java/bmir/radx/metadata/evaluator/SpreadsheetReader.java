@@ -236,7 +236,7 @@ public class SpreadsheetReader {
     Integer columnIndex = headerMap.get(header);
     if (columnIndex == null) return null;
     Cell cell = row.getCell(columnIndex);
-    return cell != null ? Integer.valueOf(cell.getStringCellValue()) : null;
+    return cell != null ? (int) cell.getNumericCellValue() : null;
   }
 
   private Boolean getBooleanCellValue(Row row, Map<HeaderName, Integer> headerMap, HeaderName header, String trueValue) {

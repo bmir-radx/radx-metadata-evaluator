@@ -1,6 +1,5 @@
 package bmir.radx.metadata.evaluator.sharedComponents;
 
-import bmir.radx.metadata.evaluator.dataFile.FieldsCollector;
 import org.metadatacenter.artifacts.model.core.TemplateSchemaArtifact;
 import org.metadatacenter.artifacts.model.visitors.TemplateReporter;
 import org.springframework.stereotype.Component;
@@ -8,6 +7,8 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.Map;
 
+import static bmir.radx.metadata.evaluator.study.FieldNameStandardizer.getStandardizedMap;
+import static bmir.radx.metadata.evaluator.study.FieldNameStandardizer.standardizeFieldName;
 import static bmir.radx.metadata.evaluator.sharedComponents.FieldRequirement.*;
 
 @Component
@@ -34,7 +35,7 @@ public class CompletionRateChecker {
 
       try {
         var value = field.get(instance);
-        if (value != null) {
+        if (value != null && !value.equals("")) {
           counts.put(requirement, counts.get(requirement) + 1);
         }
       } catch (IllegalAccessException e) {
@@ -62,7 +63,8 @@ public class CompletionRateChecker {
 
   private FieldRequirement getRequirement(String fieldName, TemplateSchemaArtifact templateSchemaArtifact){
     var templateReporter = new TemplateReporter(templateSchemaArtifact);
-    var fieldPath = "/" + fieldName;
+    var standardizedMap = getStandardizedMap(templateSchemaArtifact);
+    var fieldPath = "/" + standardizedMap.get(standardizeFieldName(fieldName));
     var fieldArtifact = templateReporter.getFieldSchema(fieldPath);
     if(fieldArtifact.isEmpty()){
       return null;

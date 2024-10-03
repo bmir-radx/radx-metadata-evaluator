@@ -19,10 +19,8 @@ public class SpreadsheetValidatorServiceTest {
   public void testApiCall() throws IOException {
     String filePath = new ClassPathResource("test-data.xlsx").getFile().getAbsolutePath();
 
-    // Call the service and perform the real API call
     var response = service.validateSpreadsheet(filePath);
 
-    // Assert that the response is not null and contains valid data
     assertNotNull(response, "Response should not be null");
     assertTrue(response.reports().size() > 0, "Response should contain validation results");
   }

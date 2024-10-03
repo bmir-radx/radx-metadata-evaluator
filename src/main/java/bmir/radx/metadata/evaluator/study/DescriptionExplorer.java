@@ -39,20 +39,20 @@ public class DescriptionExplorer {
             JsonNode identificationModule = protocolSectionNode.get("identificationModule");
             String briefTitle = identificationModule.has("briefTitle") ? identificationModule.get("briefTitle").asText(): "";
             String officialTitle = identificationModule.has("officialTitle") ? identificationModule.get("briefTitle").asText(): "";
-//            System.out.println("Row Number: " + row.rowNumber());
-//            System.out.println("RADx Title: " + row.studyTitle());
-//            System.out.println("Brief title: " + briefTitle);
-//            System.out.println("Official title: " + officialTitle);
-//            System.out.println("----------------------------");
+            System.out.println("Row Number: " + row.rowNumber());
+            System.out.println("RADx Title: " + row.studyTitle());
+            System.out.println("Brief title: " + briefTitle);
+            System.out.println("Official title: " + officialTitle);
+            System.out.println("----------------------------");
 
             // Parse the JSON response
             JsonNode descriptionModuleNode = protocolSectionNode.get("descriptionModule");
             if (descriptionModuleNode != null) {
               String briefSummary = descriptionModuleNode.has("briefSummary") ? descriptionModuleNode.get("briefSummary").asText() : "";
               String detailedDescription = descriptionModuleNode.has("detailedDescription") ? descriptionModuleNode.get("detailedDescription").asText() : "";
-              System.out.println(briefSummary);
-              System.out.println(detailedDescription);
-              System.out.println("---------------------------------");
+//              System.out.println(briefSummary);
+//              System.out.println(detailedDescription);
+//              System.out.println("---------------------------------");
 
               // Store the values in the spreadsheet
               Row excelRow = sheet.createRow(rowIndex++);

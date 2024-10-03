@@ -92,8 +92,8 @@ public class EvaluateCommand implements Callable<Integer> {
         throw new FileNotFoundException("Study Metadata File not found: " + study);
       }
       var report = studyEvaluator.evaluate(study);
-//      reports.put(studySheetName, report.evaluationResults());
-//      reports.put(studyValidationSheetName, report.validationResults());
+      reports.put(studySheetName, report.evaluationResults());
+      reports.put(studyValidationSheetName, report.validationResults());
     }
 
     if (datafile != null){

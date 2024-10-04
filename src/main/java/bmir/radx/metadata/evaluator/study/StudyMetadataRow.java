@@ -1,5 +1,7 @@
 package bmir.radx.metadata.evaluator.study;
 
+import bmir.radx.metadata.evaluator.sharedComponents.MetadataRow;
+
 import java.util.Date;
 
 public record StudyMetadataRow(
@@ -37,5 +39,5 @@ public record StudyMetadataRow(
     String consentDataUseLimitations,
     String studyStatus,
     Boolean hasDataFiles
-) {
+) implements MetadataRow {
 }

@@ -2,6 +2,8 @@ package bmir.radx.metadata.evaluator.sharedComponents;
 
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.dataFile.FieldsCollector;
+import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
+import bmir.radx.metadata.evaluator.study.StudyMetadataRow;
 import edu.stanford.bmir.radx.metadata.validator.lib.FieldValues;
 import edu.stanford.bmir.radx.metadata.validator.lib.TemplateInstanceValuesReporter;
 import org.metadatacenter.artifacts.model.core.TemplateSchemaArtifact;
@@ -9,6 +11,9 @@ import org.metadatacenter.artifacts.model.core.fields.constraints.ValueConstrain
 import org.metadatacenter.artifacts.model.visitors.TemplateReporter;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.net.*;
+import java.util.List;
 import java.util.function.Consumer;
 
 import static bmir.radx.metadata.evaluator.EvaluationConstant.*;
@@ -34,9 +39,10 @@ public class LinkChecker {
     handler.accept(new EvaluationResult(ACCESSIBLE_URI_COUNT, String.valueOf(accessibleUri)));
   }
 
-  public <T> int evaluate(T instance, TemplateSchemaArtifact templateSchemaArtifact){
+  public <T extends MetadataRow> URLCount evaluate(T instance, TemplateSchemaArtifact templateSchemaArtifact, List<SpreadsheetValidationResult> validationResults){
     var fields = instance.getClass().getDeclaredFields();
-    int accessibleUri = 0;
+    var urlCount = new URLCount(0,0,0);
+    var rowNumber = instance.rowNumber();
     for(var field: fields){
       field.setAccessible(true);
       String fieldName = field.getName();
@@ -50,13 +56,13 @@ public class LinkChecker {
             !value.equals("") &&
             valueConstraints.isPresent() &&
             meetCriteria(valueConstraints.get())){
-          accessibleUri ++;
+          checkUrlResolvable(value.toString(), rowNumber, fieldName, urlCount, validationResults);
         }
       } catch (IllegalAccessException e) {
         throw new RuntimeException("Error get value of " + fieldName);
       }
     }
-    return accessibleUri;
+    return urlCount;
   }
 
   private boolean meetCriteria(FieldValues fieldValues, ValueConstraints valueConstraints){
@@ -64,6 +70,53 @@ public class LinkChecker {
   }
 
   private boolean meetCriteria(ValueConstraints valueConstraints){
-    return (valueConstraints.isControlledTermValueConstraint() || valueConstraints.isLinkValueConstraint());
+//    return (valueConstraints.isControlledTermValueConstraint() || valueConstraints.isLinkValueConstraint());
+    return (valueConstraints.isLinkValueConstraint());
+  }
+
+  public void checkUrlResolvable(String urlString, Integer rowNumber, String fieldName, URLCount urlCount, List<SpreadsheetValidationResult> validationResults){
+    String[] urls = urlString.split(",");
+    for (String url : urls) {
+      url = url.trim();
+      if (url.isEmpty()) {
+        continue;
+      }
+
+      urlCount.incrementTotalURL();
+      boolean hostResolvable = isHostResolvable(url);
+      boolean urlResolvable = hostResolvable && isUrlResolvable(url);
+
+      if (!hostResolvable || !urlResolvable) {
+        urlCount.incrementUnresolvableURL();
+        var result = new SpreadsheetValidationResult("Unresolvable URL", fieldName, rowNumber, null, url);
+        validationResults.add(result);
+      } else {
+        urlCount.incrementResolvableURL();
+      }
+    }
+  }
+  private boolean isUrlResolvable(String urlString){
+    try {
+      var url = new URL(urlString);
+      var connection = (HttpURLConnection) url.openConnection();
+      connection.setRequestMethod("GET");
+      connection.setConnectTimeout(5000);
+      connection.setReadTimeout(5000);
+      connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3");
+      int responseCode = connection.getResponseCode();
+      return (200 <= responseCode && responseCode <= 399);
+    } catch (IOException e) {
+      return false;
+    }
+  }
+
+  private boolean isHostResolvable(String urlString){
+    try {
+      var url = new URL(urlString);
+      InetAddress.getAllByName(url.getHost());
+      return true;
+    } catch (MalformedURLException | UnknownHostException e) {
+      return false;
+    }
   }
 }

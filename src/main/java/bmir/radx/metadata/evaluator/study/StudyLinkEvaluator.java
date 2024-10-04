@@ -1,6 +1,7 @@
 package bmir.radx.metadata.evaluator.study;
 
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
+import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
 import bmir.radx.metadata.evaluator.sharedComponents.LinkChecker;
 import org.springframework.stereotype.Component;
 
@@ -21,15 +22,16 @@ public class StudyLinkEvaluator {
     this.studyTemplateGetter = studyTemplateGetter;
   }
 
-  public void evaluate(List<StudyMetadataRow> rows, Consumer<EvaluationResult> consumer){
+  public void evaluate(List<StudyMetadataRow> rows, Consumer<EvaluationResult> consumer, List<SpreadsheetValidationResult> validationResults){
     var templateSchemaArtifact = studyTemplateGetter.getTemplate();
 
     Map<Integer, Integer> distributionMap = new HashMap<>();
     for(var row: rows){
-      var URLCount = linkChecker.evaluate(row, templateSchemaArtifact);
+      var urlCount = linkChecker.evaluate(row, templateSchemaArtifact, validationResults);
+      var totalURL = urlCount.getTotalURL();
       distributionMap.put(
-          URLCount,
-          distributionMap.getOrDefault(URLCount, 0) + 1);
+          totalURL,
+          distributionMap.getOrDefault(totalURL, 0) + 1);
     }
 
     consumer.accept(new EvaluationResult(URL_COUNT_DISTRIBUTION, distributionMap.toString()));

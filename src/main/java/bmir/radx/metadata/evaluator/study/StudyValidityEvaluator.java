@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -43,8 +44,11 @@ public class StudyValidityEvaluator {
     var workbook = getWorkbook(metadataFilePath);
     spreadsheetUpdater.addMetadataTab(workbook, templateTitle, templateVersion, templateCreatedOn, templateID);
     spreadsheetUpdater.patchMetadata(workbook, metadataFilePath);
+    List<SpreadsheetValidationResult> validationReports = new ArrayList<>();
     var spreadsheetValidatorResponse = service.validateSpreadsheet(metadataFilePath.toString());
-    var validationReports = spreadsheetValidatorResponse.reports();
+    if(spreadsheetValidatorResponse != null){
+      validationReports = spreadsheetValidatorResponse.reports();
+    }
     consumer.accept(new EvaluationResult(ERRORS_NUMBER, String.valueOf(validationReports.size())));
     return validationReports;
   }

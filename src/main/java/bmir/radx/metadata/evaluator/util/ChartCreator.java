@@ -42,7 +42,12 @@ public class ChartCreator {
 
   // Common method to generate chart from dataset
   private static BufferedImage createChartFromDataset(DefaultCategoryDataset dataset, String title, String sheetName) {
-    var yAxisLabel = sheetName.replace("Report", "");
+    var yAxisLabel = sheetName.replace("Evaluation Report", "").trim();
+    if (yAxisLabel.equalsIgnoreCase("Study")) {
+      yAxisLabel = "Studies";
+    } else {
+      yAxisLabel = yAxisLabel + "s";
+    }
     var xAxisLabel = title.replace(" Distribution", "");
     if (xAxisLabel.endsWith("Completeness")) {
       xAxisLabel = "Filled " + xAxisLabel.replace("Completeness", "");

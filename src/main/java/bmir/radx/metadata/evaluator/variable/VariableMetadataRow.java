@@ -1,5 +1,7 @@
 package bmir.radx.metadata.evaluator.variable;
 
+import bmir.radx.metadata.evaluator.sharedComponents.MetadataRow;
+
 import java.util.List;
 
 public record VariableMetadataRow(
@@ -15,5 +17,5 @@ public record VariableMetadataRow(
     String concept,
     String responses,
     String radxGlobalPrompt
-) {
+) implements MetadataRow {
 }

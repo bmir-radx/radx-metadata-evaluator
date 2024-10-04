@@ -4,6 +4,8 @@ import bmir.radx.metadata.evaluator.EvaluationReport;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.SpreadsheetReader;
 import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -17,6 +19,7 @@ public class StudyEvaluator {
   private final StudyValidityEvaluator studyValidityEvaluator;
   private final StudyLinkEvaluator studyLinkEvaluator;
   private final ClinicalTrialsChecker clinicalTrialsChecker;
+  private final Logger logger = LoggerFactory.getLogger(StudyEvaluator.class);
 
   public StudyEvaluator(StudyCompletenessEvaluator completenessEvaluator,
                         StudyValidityEvaluator studyValidityEvaluator,
@@ -40,10 +43,11 @@ public class StudyEvaluator {
 //      return null;
 
       completenessEvaluator.evaluate(studyMetadataRows, consumer);
-      System.out.println("Start to validate spreadsheet");
+      logger.info("Start to validate study metadata spreadsheet");
       var validationResults = studyValidityEvaluator.evaluate(metadataFilePath, consumer);
-      studyLinkEvaluator.evaluate(studyMetadataRows, consumer);
-      System.out.println("Start to check clinicalTrials link");
+      logger.info("Start to check resolvability of link");
+      studyLinkEvaluator.evaluate(studyMetadataRows, consumer, validationResults);
+      logger.info("Start to check clinicalTrials link");
       clinicalTrialsChecker.checkClinicalTrialsContent(studyMetadataRows, consumer, validationResults);
       return new EvaluationReport<>(evaluationResults, validationResults);
     } catch (IOException e) {

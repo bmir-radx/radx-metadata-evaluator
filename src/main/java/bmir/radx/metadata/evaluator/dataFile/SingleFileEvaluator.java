@@ -9,6 +9,8 @@ import edu.stanford.bmir.radx.metadata.validator.lib.JsonLoader;
 import edu.stanford.bmir.radx.metadata.validator.lib.TemplateInstanceValuesReporter;
 import org.metadatacenter.artifacts.model.reader.JsonSchemaArtifactReader;
 import org.metadatacenter.artifacts.model.visitors.TemplateReporter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -21,6 +23,7 @@ public class SingleFileEvaluator {
   private final ControlledTermsEvaluator controlledTermsEvaluator;
   private final LinkChecker linkChecker;
   private final UniquenessEvaluator uniquenessEvaluator;
+  private final Logger logger = LoggerFactory.getLogger(SingleFileEvaluator.class);
 
   public SingleFileEvaluator(DataFileCompletenessEvaluator dataFileCompletenessEvaluator, ValidityEvaluator validityEvaluator, ControlledTermsEvaluator controlledTermsEvaluator, LinkChecker linkChecker, UniquenessEvaluator uniquenessEvaluator) {
     this.dataFileCompletenessEvaluator = dataFileCompletenessEvaluator;
@@ -44,10 +47,15 @@ public class SingleFileEvaluator {
     var templateInstanceArtifact = jsonSchemaArtifactReader.readTemplateInstanceArtifact((ObjectNode) instanceNode);
     var templateInstanceValuesReporter = new TemplateInstanceValuesReporter(templateInstanceArtifact);
 
+    logger.info("Start to evaluate the completeness of data file metadata");
     dataFileCompletenessEvaluator.evaluate(templateSchemaArtifact, templateInstanceValuesReporter, consumer);
+    logger.info("Start to evaluate the validity of data file metadata");
     var validationResult = validityEvaluator.evaluate(templateContent, instanceContent, consumer);
+    logger.info("Start to evaluate the controlled terms of data file metadata");
     controlledTermsEvaluator.evaluate(templateReporter, templateInstanceValuesReporter, consumer);
+    logger.info("Start to evaluate the links of data file metadata");
     linkChecker.evaluate(templateReporter, templateInstanceValuesReporter, consumer);
+    logger.info("Start to evaluate the uniqueness of data file metadata");
     uniquenessEvaluator.evaluate(templateInstanceArtifact, consumer);
 
     return new EvaluationReport<>(results, validationResult);

@@ -3,7 +3,8 @@ package bmir.radx.metadata.evaluator.study;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.util.SpreadsheetUpdater;
 import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
-import bmir.radx.metadata.evaluator.thirdParty.SpreadsheetValidatorService;
+import edu.stanford.bmir.radx.metadata.validator.lib.LiteralFieldValidators;
+import edu.stanford.bmir.radx.metadata.validator.lib.ValidatorFactory;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,6 +14,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -33,21 +35,35 @@ public class StudyValidityEvaluator {
   private String templateCreatedOn;
 
   private final SpreadsheetUpdater spreadsheetUpdater;
-  private final SpreadsheetValidatorService service;
+  private final ValidatorFactory validatorFactory;
 
-  public StudyValidityEvaluator(SpreadsheetUpdater spreadsheetUpdater, SpreadsheetValidatorService service) {
+  public StudyValidityEvaluator(SpreadsheetUpdater spreadsheetUpdater, ValidatorFactory validatorFactory) {
     this.spreadsheetUpdater = spreadsheetUpdater;
-    this.service = service;
+    this.validatorFactory = validatorFactory;
   }
 
   public List<SpreadsheetValidationResult> evaluate(Path metadataFilePath, Consumer<EvaluationResult> consumer){
+    var validator = validatorFactory.createValidator(new LiteralFieldValidators(new HashMap<>()));
+
     var workbook = getWorkbook(metadataFilePath);
+
     spreadsheetUpdater.addMetadataTab(workbook, templateTitle, templateVersion, templateCreatedOn, templateID);
     spreadsheetUpdater.patchMetadata(workbook, metadataFilePath);
+
     List<SpreadsheetValidationResult> validationReports = new ArrayList<>();
-    var spreadsheetValidatorResponse = service.validateSpreadsheet(metadataFilePath.toString());
+    var spreadsheetValidatorResponse = validator.validateSpreadsheet(metadataFilePath.toString());
     if(spreadsheetValidatorResponse != null){
-      validationReports = spreadsheetValidatorResponse.reports();
+      var reports = spreadsheetValidatorResponse.reports();
+      reports.forEach(result-> {
+          var spreadsheetResult = new SpreadsheetValidationResult(
+              result.errorType(),
+              result.column(),
+              result.row(),
+              result.repairSuggestion(),
+              result.value()
+          );
+          validationReports.add(spreadsheetResult);
+      });
     }
     consumer.accept(new EvaluationResult(ERRORS_NUMBER, String.valueOf(validationReports.size())));
     return validationReports;

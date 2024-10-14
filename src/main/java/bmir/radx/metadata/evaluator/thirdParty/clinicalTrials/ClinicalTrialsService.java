@@ -1,16 +1,11 @@
 package bmir.radx.metadata.evaluator.thirdParty.clinicalTrials;
 
 import bmir.radx.metadata.evaluator.thirdParty.RestServiceHandler;
-import bmir.radx.metadata.evaluator.thirdParty.SpreadsheetValidatorResponse;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import reactor.core.publisher.Mono;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 

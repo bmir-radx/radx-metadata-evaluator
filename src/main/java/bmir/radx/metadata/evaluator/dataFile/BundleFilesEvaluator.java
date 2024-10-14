@@ -24,16 +24,13 @@ import static bmir.radx.metadata.evaluator.EvaluationConstant.*;
 @Component
 public class BundleFilesEvaluator {
   private String templateFileName = "RADxMetadataSpecification.json";
-  private String sheetName = "Data File Evaluation Report";
   private final ObjectMapper mapper = new ObjectMapper();
   private final SingleFileEvaluator singleFileEvaluator;
   private final ReportAggregator reportAggregator;
-  private final EvaluationSheetReportWriter writer;
 
-  public BundleFilesEvaluator(SingleFileEvaluator singleFileEvaluator, ReportAggregator reportAggregator, EvaluationSheetReportWriter writer) {
+  public BundleFilesEvaluator(SingleFileEvaluator singleFileEvaluator, ReportAggregator reportAggregator) {
     this.singleFileEvaluator = singleFileEvaluator;
     this.reportAggregator = reportAggregator;
-    this.writer = writer;
   }
 
   public EvaluationReport<JsonValidationResult> evaluate(Path filepath, Path out){

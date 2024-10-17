@@ -33,7 +33,7 @@ public class LinkCheckerTest {
   @Test
   public void testCheckUrlResolvable_AllValidUrls() {
     String urlString = "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9229995/";
-    linkChecker.checkUrlResolvable(urlString, 1, "TestField", urlCount, validationResults);
+    linkChecker.checkUrlResolvable(urlString, 1, "phs0023455", "TestField", urlCount, validationResults);
 
     verify(urlCount, times(1)).incrementTotalURL();
     verify(urlCount, times(1)).incrementResolvableURL();

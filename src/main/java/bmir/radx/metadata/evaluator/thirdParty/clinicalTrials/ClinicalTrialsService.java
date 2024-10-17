@@ -1,6 +1,6 @@
 package bmir.radx.metadata.evaluator.thirdParty.clinicalTrials;
 
-import bmir.radx.metadata.evaluator.thirdParty.RestServiceHandler;
+import edu.stanford.bmir.radx.metadata.validator.lib.thirdPartyValidators.RestServiceHandler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;

@@ -40,7 +40,7 @@ public class ClinicalTrialsChecker {
         handleValidNctId(row, nctId, validationResults);
       } else {
         // Handle NCT ID with query parameters
-        addValidationResult(validationResults, row.rowNumber(), clinicalTrialsGovUrl);
+        addValidationResult(validationResults, row.rowNumber(), row.studyPHS(), clinicalTrialsGovUrl);
       }
     }
   }
@@ -52,10 +52,10 @@ public class ClinicalTrialsChecker {
     if (response != null) {
       OllamaResponse llmResponse = processClinicalTrialResponse(row, response);
       if (llmResponse != null && !isSameStudy(llmResponse)) {
-        addValidationResult(validationResults, row.rowNumber(), row.clinicalTrialsGovUrl());
+        addValidationResult(validationResults, row.rowNumber(), row.studyPHS(), row.clinicalTrialsGovUrl());
       }
     } else {
-      addValidationResult(validationResults, row.rowNumber(), row.clinicalTrialsGovUrl());
+      addValidationResult(validationResults, row.rowNumber(), row.studyPHS(), row.clinicalTrialsGovUrl());
     }
   }
 
@@ -105,11 +105,13 @@ public class ClinicalTrialsChecker {
 
   private void addValidationResult(List<SpreadsheetValidationResult> validationResults,
                                    int rowNumber,
+                                   String phs,
                                    String link){
     var validationResult = new SpreadsheetValidationResult(
         "Wrong clinicalTrials.gov link",
         "CLINICALTRIALS.GOV URL",
         rowNumber,
+        phs,
         null,
         link
     );

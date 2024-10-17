@@ -30,7 +30,7 @@ public class ConsistentEvaluator {
         fileInconsistentRows.add(row.rowNumber());
       }
     }
-    consumer.accept(new EvaluationResult(INCONSISTENT_STUDY_COUNT, String.valueOf(studyInconsistentCount)));
+    consumer.accept(new EvaluationResult(NUMBER_OF_INCONSISTENT_STUDIES, String.valueOf(studyInconsistentCount)));
     consumer.accept(new EvaluationResult(INCONSISTENT_FILE_COUNT, String.valueOf(fileInconsistentCount)));
     if(studyInconsistentCount!=0){
       consumer.accept(new EvaluationResult(INCONSISTENT_STUDY_COUNT_ROWS, studyInconsistentRows.toString()));

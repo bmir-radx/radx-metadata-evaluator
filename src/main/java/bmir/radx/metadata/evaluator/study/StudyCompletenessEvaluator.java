@@ -58,10 +58,10 @@ public class StudyCompletenessEvaluator {
     consumer.accept(new EvaluationResult(TOTAL_NUMBER_OF_STUDIES, String.valueOf(rows.size())));
     consumer.accept(new EvaluationResult(TOTAL_FIELDS, String.valueOf(totalFields)));
     consumer.accept(new EvaluationResult(TOTAL_REQUIRED_FIELDS, String.valueOf(totalRequiredFields)));
-    consumer.accept(new EvaluationResult(REQUIRED_FIELDS_COMPLETENESS_DISTRIBUTION, completenessDistribution.get(REQUIRED).toString()));
     consumer.accept(new EvaluationResult(TOTAL_RECOMMENDED_FIELDS, String.valueOf(totalRecommendedFields)));
-    consumer.accept(new EvaluationResult(RECOMMENDED_FIELDS_COMPLETENESS_DISTRIBUTION, completenessDistribution.get(RECOMMENDED).toString()));
     consumer.accept(new EvaluationResult(TOTAL_OPTIONAL_FIELDS, String.valueOf(totalOptionalFields)));
+    consumer.accept(new EvaluationResult(REQUIRED_FIELDS_COMPLETENESS_DISTRIBUTION, completenessDistribution.get(REQUIRED).toString()));
+    consumer.accept(new EvaluationResult(RECOMMENDED_FIELDS_COMPLETENESS_DISTRIBUTION, completenessDistribution.get(RECOMMENDED).toString()));
     consumer.accept(new EvaluationResult(OPTIONAL_FIELDS_COMPLETENESS_DISTRIBUTION, completenessDistribution.get(OPTIONAL).toString()));
 
 //    List<Integer> incompleteStudies = new ArrayList<>();

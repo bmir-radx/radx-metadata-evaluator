@@ -39,10 +39,11 @@ public class LinkChecker {
     handler.accept(new EvaluationResult(ACCESSIBLE_URI_COUNT, String.valueOf(accessibleUri)));
   }
 
-  public <T extends MetadataRow> URLCount evaluate(T instance, TemplateSchemaArtifact templateSchemaArtifact, List<SpreadsheetValidationResult> validationResults){
+  public URLCount evaluate(StudyMetadataRow instance, TemplateSchemaArtifact templateSchemaArtifact, List<SpreadsheetValidationResult> validationResults){
     var fields = instance.getClass().getDeclaredFields();
     var urlCount = new URLCount(0,0,0);
     var rowNumber = instance.rowNumber();
+    var phsNumber = instance.studyPHS();
     for(var field: fields){
       field.setAccessible(true);
       String fieldName = field.getName();
@@ -56,7 +57,7 @@ public class LinkChecker {
             !value.equals("") &&
             valueConstraints.isPresent() &&
             meetCriteria(valueConstraints.get())){
-          checkUrlResolvable(value.toString(), rowNumber, fieldName, urlCount, validationResults);
+          checkUrlResolvable(value.toString(), rowNumber, phsNumber, fieldName, urlCount, validationResults);
         }
       } catch (IllegalAccessException e) {
         throw new RuntimeException("Error get value of " + fieldName);
@@ -74,7 +75,7 @@ public class LinkChecker {
     return (valueConstraints.isLinkValueConstraint());
   }
 
-  public void checkUrlResolvable(String urlString, Integer rowNumber, String fieldName, URLCount urlCount, List<SpreadsheetValidationResult> validationResults){
+  public void checkUrlResolvable(String urlString, Integer rowNumber, String phs, String fieldName, URLCount urlCount, List<SpreadsheetValidationResult> validationResults){
     String[] urls = urlString.split(",");
     for (String url : urls) {
       url = url.trim();
@@ -88,7 +89,7 @@ public class LinkChecker {
 
       if (!hostResolvable || !urlResolvable) {
         urlCount.incrementUnresolvableURL();
-        var result = new SpreadsheetValidationResult("Unresolvable URL", fieldName, rowNumber, null, url);
+        var result = new SpreadsheetValidationResult("Unresolvable URL", fieldName, rowNumber, phs, null, url);
         validationResults.add(result);
       } else {
         urlCount.incrementResolvableURL();

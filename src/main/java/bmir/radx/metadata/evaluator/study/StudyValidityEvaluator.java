@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import static bmir.radx.metadata.evaluator.EvaluationConstant.ERRORS_NUMBER;
@@ -42,16 +43,16 @@ public class StudyValidityEvaluator {
     this.validatorFactory = validatorFactory;
   }
 
-  public List<SpreadsheetValidationResult> evaluate(Path metadataFilePath, Consumer<EvaluationResult> consumer){
-    var validator = validatorFactory.createValidator(new LiteralFieldValidators(new HashMap<>()));
-
+  public List<SpreadsheetValidationResult> evaluate(Path metadataFilePath, List<StudyMetadataRow> rows, Consumer<EvaluationResult> consumer){
     var workbook = getWorkbook(metadataFilePath);
-
     spreadsheetUpdater.addMetadataTab(workbook, templateTitle, templateVersion, templateCreatedOn, templateID);
     spreadsheetUpdater.patchMetadata(workbook, metadataFilePath);
 
+    var validator = validatorFactory.createValidator(new LiteralFieldValidators(new HashMap<>()));
     List<SpreadsheetValidationResult> validationReports = new ArrayList<>();
     var spreadsheetValidatorResponse = validator.validateSpreadsheet(metadataFilePath.toString());
+    var mapping = getRowToPhsMap(rows);
+
     if(spreadsheetValidatorResponse != null){
       var reports = spreadsheetValidatorResponse.reports();
       reports.forEach(result-> {
@@ -59,6 +60,7 @@ public class StudyValidityEvaluator {
               result.errorType(),
               result.column(),
               result.row(),
+              mapping.get(result.row()),
               result.repairSuggestion(),
               result.value()
           );
@@ -86,5 +88,13 @@ public class StudyValidityEvaluator {
         report.errorType(),
         report.repairSuggestion()
     );
+  }
+
+  private Map<Integer, String> getRowToPhsMap(List<StudyMetadataRow> rows){
+    Map<Integer, String> mapping = new HashMap<>();
+    rows.forEach(row->{
+      mapping.put(row.rowNumber(), row.studyPHS());
+    });
+    return mapping;
   }
 }

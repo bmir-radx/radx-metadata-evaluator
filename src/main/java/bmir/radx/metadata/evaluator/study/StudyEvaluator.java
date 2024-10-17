@@ -19,15 +19,22 @@ public class StudyEvaluator {
   private final StudyValidityEvaluator studyValidityEvaluator;
   private final StudyLinkEvaluator studyLinkEvaluator;
   private final ClinicalTrialsChecker clinicalTrialsChecker;
+  private final StudyConsistencyEvaluator consistencyEvaluator;
+  private final StudyUniquenessEvaluator uniquenessEvaluator;
   private final Logger logger = LoggerFactory.getLogger(StudyEvaluator.class);
 
   public StudyEvaluator(StudyCompletenessEvaluator completenessEvaluator,
                         StudyValidityEvaluator studyValidityEvaluator,
-                        StudyLinkEvaluator studyLinkEvaluator, ClinicalTrialsChecker clinicalTrialsChecker) {
+                        StudyLinkEvaluator studyLinkEvaluator,
+                        ClinicalTrialsChecker clinicalTrialsChecker,
+                        StudyConsistencyEvaluator consistencyEvaluator,
+                        StudyUniquenessEvaluator uniquenessEvaluator) {
     this.completenessEvaluator = completenessEvaluator;
     this.studyValidityEvaluator = studyValidityEvaluator;
     this.studyLinkEvaluator = studyLinkEvaluator;
     this.clinicalTrialsChecker = clinicalTrialsChecker;
+    this.consistencyEvaluator = consistencyEvaluator;
+    this.uniquenessEvaluator = uniquenessEvaluator;
   }
 
   public EvaluationReport<SpreadsheetValidationResult> evaluate(Path metadataFilePath) {
@@ -44,11 +51,15 @@ public class StudyEvaluator {
 
       completenessEvaluator.evaluate(studyMetadataRows, consumer);
       logger.info("Start to validate study metadata spreadsheet");
-      var validationResults = studyValidityEvaluator.evaluate(metadataFilePath, consumer);
-      logger.info("Start to check resolvability of link");
+      var validationResults = studyValidityEvaluator.evaluate(metadataFilePath, studyMetadataRows, consumer);
+      logger.info("Start to check resolvability of links");
       studyLinkEvaluator.evaluate(studyMetadataRows, consumer, validationResults);
       logger.info("Start to check clinicalTrials link");
       clinicalTrialsChecker.checkClinicalTrialsContent(studyMetadataRows, consumer, validationResults);
+      logger.info("Start to check consistency");
+      consistencyEvaluator.evaluate(studyMetadataRows, consumer, validationResults);
+      logger.info("Start to check uniqueness");
+      uniquenessEvaluator.evaluate(studyMetadataRows, consumer);
       return new EvaluationReport<>(evaluationResults, validationResults);
     } catch (IOException e) {
       throw new RuntimeException(e);

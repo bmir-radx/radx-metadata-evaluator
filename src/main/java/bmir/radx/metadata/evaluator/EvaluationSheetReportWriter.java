@@ -48,7 +48,7 @@ public class EvaluationSheetReportWriter {
   public void writeValidationReportHeader(Sheet sheet, Result sampleResult) {
     Row headerRow = sheet.createRow(0);
     if (sampleResult instanceof SpreadsheetValidationResult) {
-      createValidationHeader(headerRow, "Row", "Column", "Value", "Error Type", "Repair Suggestion");
+      createValidationHeader(headerRow, "Row", "Study PHS", "Column", "Value", "Error Type", "Repair Suggestion");
     } else if (sampleResult instanceof JsonValidationResult) {
       createValidationHeader(headerRow, "File Name", "Error Pointer", "Validation Type", "Error Message", "Suggestion");
     }
@@ -96,10 +96,11 @@ public class EvaluationSheetReportWriter {
 
       if (result instanceof SpreadsheetValidationResult spreadsheetResult) {
         row.createCell(0).setCellValue(spreadsheetResult.row());
-        row.createCell(1).setCellValue(spreadsheetResult.column());
-        row.createCell(2).setCellValue(spreadsheetResult.value() != null ? spreadsheetResult.value().toString() : "");
-        row.createCell(3).setCellValue(spreadsheetResult.errorType());
-        row.createCell(4).setCellValue(spreadsheetResult.repairSuggestion());
+        row.createCell(1).setCellValue(spreadsheetResult.phsNumber());
+        row.createCell(2).setCellValue(spreadsheetResult.column());
+        row.createCell(3).setCellValue(spreadsheetResult.value() != null ? spreadsheetResult.value().toString() : "");
+        row.createCell(4).setCellValue(spreadsheetResult.errorType());
+        row.createCell(5).setCellValue(spreadsheetResult.repairSuggestion());
       } else if (result instanceof JsonValidationResult jsonResult) {
         row.createCell(0).setCellValue(jsonResult.fileName());
         row.createCell(1).setCellValue(jsonResult.pointer());

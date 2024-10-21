@@ -1,5 +1,6 @@
 package bmir.radx.metadata.evaluator.dataFile;
 
+import bmir.radx.metadata.evaluator.EvaluationCriterion;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import edu.stanford.bmir.radx.metadata.validator.lib.*;
 import org.metadatacenter.artifacts.model.core.ElementSchemaArtifact;
@@ -11,7 +12,9 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 import java.util.function.Consumer;
 
-import static bmir.radx.metadata.evaluator.EvaluationConstant.*;
+import static bmir.radx.metadata.evaluator.EvaluationCriterion.BASIC_INFO;
+import static bmir.radx.metadata.evaluator.EvaluationCriterion.COMPLETENESS;
+import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
 
 @Component
 public class DataFileCompletenessEvaluator {
@@ -84,28 +87,28 @@ public class DataFileCompletenessEvaluator {
     var overallCompleteness = ((double) totalFilledFieldCount / totalFieldCount) * 100;
     var elementCompleteness = ((double) filledElementCount / elementCount) * 100;
 
-    handler.accept(new EvaluationResult(TOTAL_REQUIRED_FIELDS, String.valueOf(requiredFieldCount)));
-    handler.accept(new EvaluationResult(FILLED_REQUIRED_FIELDS_COUNT, String.valueOf(filledRequiredFieldCount)));
-    handler.accept(new EvaluationResult(FILLED_REQUIRED_FIELDS, filledRequiredFields.toString()));
-    handler.accept(new EvaluationResult(REQUIRED_FIELDS_COMPLETION_RATE, String.format("%.2f%%",requiredCompleteness)));
+    handler.accept(new EvaluationResult(BASIC_INFO, TOTAL_REQUIRED_FIELDS, String.valueOf(requiredFieldCount)));
+    handler.accept(new EvaluationResult(COMPLETENESS, FILLED_REQUIRED_FIELDS_COUNT, String.valueOf(filledRequiredFieldCount)));
+    handler.accept(new EvaluationResult(COMPLETENESS, FILLED_REQUIRED_FIELDS, filledRequiredFields.toString()));
+    handler.accept(new EvaluationResult(COMPLETENESS, REQUIRED_FIELDS_COMPLETION_RATE, String.format("%.2f%%",requiredCompleteness)));
 
-    handler.accept(new EvaluationResult(TOTAL_RECOMMENDED_FIELDS, String.valueOf(recommendedFieldCount)));
-    handler.accept(new EvaluationResult(FILLED_RECOMMENDED_FIELDS_COUNT,String.valueOf(filledRecommendedFieldCount)));
-    handler.accept(new EvaluationResult(FILLED_RECOMMENDED_FIELDS, filledRecommendedFields.toString()));
-    handler.accept(new EvaluationResult(RECOMMENDED_FIELDS_COMPLETION_RATE, String.format("%.2f%%",recommendedCompleteness)));
+    handler.accept(new EvaluationResult(BASIC_INFO,TOTAL_RECOMMENDED_FIELDS, String.valueOf(recommendedFieldCount)));
+    handler.accept(new EvaluationResult(COMPLETENESS, FILLED_RECOMMENDED_FIELDS_COUNT,String.valueOf(filledRecommendedFieldCount)));
+    handler.accept(new EvaluationResult(COMPLETENESS, FILLED_RECOMMENDED_FIELDS, filledRecommendedFields.toString()));
+    handler.accept(new EvaluationResult(COMPLETENESS, RECOMMENDED_FIELDS_COMPLETION_RATE, String.format("%.2f%%",recommendedCompleteness)));
 
-    handler.accept(new EvaluationResult(TOTAL_OPTIONAL_FIELDS, String.valueOf(optionalFieldCount)));
-    handler.accept(new EvaluationResult(FILLED_OPTIONAL_FIELDS_COUNT, String.valueOf(filledOptionalFieldCount)));
-    handler.accept(new EvaluationResult(FILLED_OPTIONAL_FIELDS, filledOptionalFields.toString()));
-    handler.accept(new EvaluationResult(OPTIONAL_FIELDS_COMPLETION_RATE, String.format("%.2f%%",optionalCompleteness)));
+    handler.accept(new EvaluationResult(BASIC_INFO,TOTAL_OPTIONAL_FIELDS, String.valueOf(optionalFieldCount)));
+    handler.accept(new EvaluationResult(COMPLETENESS, FILLED_OPTIONAL_FIELDS_COUNT, String.valueOf(filledOptionalFieldCount)));
+    handler.accept(new EvaluationResult(COMPLETENESS, FILLED_OPTIONAL_FIELDS, filledOptionalFields.toString()));
+    handler.accept(new EvaluationResult(COMPLETENESS, OPTIONAL_FIELDS_COMPLETION_RATE, String.format("%.2f%%",optionalCompleteness)));
 
-    handler.accept(new EvaluationResult(TOTAL_FIELDS, String.valueOf(totalFieldCount)));
-    handler.accept(new EvaluationResult(TOTAL_FILLED_FIELDS, String.valueOf(totalFilledFieldCount)));
-    handler.accept(new EvaluationResult(OVERALL_COMPLETION_RATE, String.format("%.2f%%",overallCompleteness)));
+    handler.accept(new EvaluationResult(BASIC_INFO, TOTAL_FIELDS, String.valueOf(totalFieldCount)));
+    handler.accept(new EvaluationResult(COMPLETENESS, TOTAL_FILLED_FIELDS, String.valueOf(totalFilledFieldCount)));
+    handler.accept(new EvaluationResult(COMPLETENESS, OVERALL_COMPLETION_RATE, String.format("%.2f%%",overallCompleteness)));
 
-    handler.accept(new EvaluationResult(FILLED_ELEMENTS, filledElements.toString()));
-    handler.accept(new EvaluationResult(FILLED_ELEMENTS_COUNT, String.valueOf(filledElementCount)));
-    handler.accept(new EvaluationResult(ELEMENT_COMPLETION_RATE, String.format("%.2f%%",elementCompleteness)));
+    handler.accept(new EvaluationResult(COMPLETENESS, FILLED_ELEMENTS, filledElements.toString()));
+    handler.accept(new EvaluationResult(COMPLETENESS, FILLED_ELEMENTS_COUNT, String.valueOf(filledElementCount)));
+    handler.accept(new EvaluationResult(COMPLETENESS, ELEMENT_COMPLETION_RATE, String.format("%.2f%%",elementCompleteness)));
   }
 
   private boolean isRequiredField(Optional<ValueConstraints> valueConstraints){

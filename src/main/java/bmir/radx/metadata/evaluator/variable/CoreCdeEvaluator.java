@@ -1,5 +1,6 @@
 package bmir.radx.metadata.evaluator.variable;
 
+import bmir.radx.metadata.evaluator.EvaluationCriterion;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.SpreadsheetReader;
 import org.springframework.stereotype.Component;
@@ -10,7 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static bmir.radx.metadata.evaluator.EvaluationConstant.*;
+import static bmir.radx.metadata.evaluator.EvaluationCriterion.ACCURACY;
+import static bmir.radx.metadata.evaluator.EvaluationCriterion.BASIC_INFO;
+import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
 
 @Component
 public class CoreCdeEvaluator {
@@ -39,11 +42,11 @@ public class CoreCdeEvaluator {
       totalVar++;
     }
 
-    consumer.accept(new EvaluationResult(TOTAL_NUMBER_OF_VARIABLES, String.valueOf(totalVar)));
-    consumer.accept(new EvaluationResult(NUMBER_OF_TIER_1_CDES, String.valueOf(coreCde)));
-    consumer.accept(new EvaluationResult(NUMBER_OF_INCORRECT_CORE_CDES, String.valueOf(incorrectCoreCdeCount)));
+    consumer.accept(new EvaluationResult(BASIC_INFO, TOTAL_NUMBER_OF_VARIABLES, String.valueOf(totalVar)));
+    consumer.accept(new EvaluationResult(BASIC_INFO, NUMBER_OF_TIER_1_CDES, String.valueOf(coreCde)));
+    consumer.accept(new EvaluationResult(ACCURACY, NUMBER_OF_INCORRECT_CORE_CDES, String.valueOf(incorrectCoreCdeCount)));
     if(incorrectCoreCdeCount !=0 ){
-      consumer.accept(new EvaluationResult(INCORRECT_CORE_CDES_ROWS, incorrectCoreCdes.toString()));
+      consumer.accept(new EvaluationResult(ACCURACY, INCORRECT_CORE_CDES_ROWS, incorrectCoreCdes.toString()));
     }
   }
 

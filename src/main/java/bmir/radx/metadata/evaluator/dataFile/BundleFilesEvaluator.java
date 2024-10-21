@@ -13,13 +13,8 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-
-import static bmir.radx.metadata.evaluator.util.DistributionContainer.*;
-import static bmir.radx.metadata.evaluator.EvaluationConstant.*;
 
 @Component
 public class BundleFilesEvaluator {

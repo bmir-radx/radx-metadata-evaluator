@@ -1,5 +1,6 @@
 package bmir.radx.metadata.evaluator.sharedComponents;
 
+import bmir.radx.metadata.evaluator.EvaluationCriterion;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.dataFile.FieldsCollector;
 import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
@@ -16,7 +17,8 @@ import java.net.*;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static bmir.radx.metadata.evaluator.EvaluationConstant.*;
+import static bmir.radx.metadata.evaluator.EvaluationCriterion.ACCESSIBILITY;
+import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
 import static bmir.radx.metadata.evaluator.study.FieldNameStandardizer.getStandardizedMap;
 import static bmir.radx.metadata.evaluator.study.FieldNameStandardizer.standardizeFieldName;
 
@@ -36,7 +38,7 @@ public class LinkChecker {
     }
 
     //todo radx-rad has publication-url
-    handler.accept(new EvaluationResult(ACCESSIBLE_URI_COUNT, String.valueOf(accessibleUri)));
+    handler.accept(new EvaluationResult(ACCESSIBILITY, ACCESSIBLE_URI_COUNT, String.valueOf(accessibleUri)));
   }
 
   public URLCount evaluate(StudyMetadataRow instance, TemplateSchemaArtifact templateSchemaArtifact, List<SpreadsheetValidationResult> validationResults){

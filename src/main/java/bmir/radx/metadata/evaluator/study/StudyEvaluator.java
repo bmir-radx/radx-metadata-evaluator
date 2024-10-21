@@ -16,24 +16,24 @@ import java.util.function.Consumer;
 @Component
 public class StudyEvaluator {
   private final StudyCompletenessEvaluator completenessEvaluator;
-  private final StudyValidityEvaluator studyValidityEvaluator;
-  private final StudyLinkEvaluator studyLinkEvaluator;
-  private final ClinicalTrialsChecker clinicalTrialsChecker;
   private final StudyConsistencyEvaluator consistencyEvaluator;
+  private final StudyAccuracyEvaluator accuracyEvaluator;
+  private final StudyValidityEvaluator studyValidityEvaluator;
+  private final StudyAccessibilityEvaluator studyAccessibilityEvaluator;
   private final StudyUniquenessEvaluator uniquenessEvaluator;
   private final Logger logger = LoggerFactory.getLogger(StudyEvaluator.class);
 
   public StudyEvaluator(StudyCompletenessEvaluator completenessEvaluator,
-                        StudyValidityEvaluator studyValidityEvaluator,
-                        StudyLinkEvaluator studyLinkEvaluator,
-                        ClinicalTrialsChecker clinicalTrialsChecker,
                         StudyConsistencyEvaluator consistencyEvaluator,
+                        StudyAccuracyEvaluator accuracyEvaluator,
+                        StudyValidityEvaluator studyValidityEvaluator,
+                        StudyAccessibilityEvaluator studyAccessibilityEvaluator,
                         StudyUniquenessEvaluator uniquenessEvaluator) {
     this.completenessEvaluator = completenessEvaluator;
-    this.studyValidityEvaluator = studyValidityEvaluator;
-    this.studyLinkEvaluator = studyLinkEvaluator;
-    this.clinicalTrialsChecker = clinicalTrialsChecker;
     this.consistencyEvaluator = consistencyEvaluator;
+    this.accuracyEvaluator = accuracyEvaluator;
+    this.studyValidityEvaluator = studyValidityEvaluator;
+    this.studyAccessibilityEvaluator = studyAccessibilityEvaluator;
     this.uniquenessEvaluator = uniquenessEvaluator;
   }
 
@@ -53,9 +53,9 @@ public class StudyEvaluator {
       logger.info("Start to validate study metadata spreadsheet");
       var validationResults = studyValidityEvaluator.evaluate(metadataFilePath, studyMetadataRows, consumer);
       logger.info("Start to check resolvability of links");
-      studyLinkEvaluator.evaluate(studyMetadataRows, consumer, validationResults);
+      studyAccessibilityEvaluator.evaluate(studyMetadataRows, consumer, validationResults);
       logger.info("Start to check clinicalTrials link");
-      clinicalTrialsChecker.checkClinicalTrialsContent(studyMetadataRows, consumer, validationResults);
+      accuracyEvaluator.evaluate(studyMetadataRows, consumer, validationResults);
       logger.info("Start to check consistency");
       consistencyEvaluator.evaluate(studyMetadataRows, consumer, validationResults);
       logger.info("Start to check uniqueness");

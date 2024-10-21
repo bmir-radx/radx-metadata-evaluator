@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -23,9 +24,9 @@ public class ClinicalTrialsChecker {
     this.ollamaService = ollamaService;
   }
 
-  public void checkClinicalTrialsContent(List<StudyMetadataRow> metadataRows,
-                                         Consumer<EvaluationResult> consumer,
-                                         List<SpreadsheetValidationResult> validationResults) {
+  public List<Integer> checkInvalidClinicalTrialsLink(List<StudyMetadataRow> metadataRows,
+                                             List<SpreadsheetValidationResult> validationResults) {
+    List<Integer> incorrectCtLink = new ArrayList<>();
     for (StudyMetadataRow row : metadataRows) {
       String clinicalTrialsGovUrl = row.clinicalTrialsGovUrl();
       String nctId = extractNctId(clinicalTrialsGovUrl);
@@ -37,26 +38,34 @@ public class ClinicalTrialsChecker {
 
       // Handle valid NCT ID without query parameters
       if (!nctId.contains("?")) {
-        handleValidNctId(row, nctId, validationResults);
+        var valid = checkValidNctId(row, nctId, validationResults);
+        if(!valid){
+          incorrectCtLink.add(row.rowNumber());
+        }
       } else {
         // Handle NCT ID with query parameters
         addValidationResult(validationResults, row.rowNumber(), row.studyPHS(), clinicalTrialsGovUrl);
+        incorrectCtLink.add(row.rowNumber());
       }
     }
+    return incorrectCtLink;
   }
 
-  private void handleValidNctId(StudyMetadataRow row, String nctId,
-                                List<SpreadsheetValidationResult> validationResults) {
+  private boolean checkValidNctId(StudyMetadataRow row, String nctId,
+                                  List<SpreadsheetValidationResult> validationResults) {
     var response = clinicalTrialsService.sendGetRequest(nctId);
 
     if (response != null) {
       OllamaResponse llmResponse = processClinicalTrialResponse(row, response);
       if (llmResponse != null && !isSameStudy(llmResponse)) {
         addValidationResult(validationResults, row.rowNumber(), row.studyPHS(), row.clinicalTrialsGovUrl());
+        return false;
       }
     } else {
       addValidationResult(validationResults, row.rowNumber(), row.studyPHS(), row.clinicalTrialsGovUrl());
+      return false;
     }
+    return true;
   }
 
   private OllamaResponse processClinicalTrialResponse(StudyMetadataRow row, ClinicalTrialsResponse response) {

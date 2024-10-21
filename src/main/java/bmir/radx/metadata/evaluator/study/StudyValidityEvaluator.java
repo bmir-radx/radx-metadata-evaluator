@@ -1,5 +1,6 @@
 package bmir.radx.metadata.evaluator.study;
 
+import bmir.radx.metadata.evaluator.EvaluationCriterion;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.util.SpreadsheetUpdater;
 import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
@@ -19,7 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static bmir.radx.metadata.evaluator.EvaluationConstant.ERRORS_NUMBER;
+import static bmir.radx.metadata.evaluator.EvaluationCriterion.VALIDITY;
+import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
 
 @Component
 public class StudyValidityEvaluator {
@@ -53,6 +55,7 @@ public class StudyValidityEvaluator {
     var spreadsheetValidatorResponse = validator.validateSpreadsheet(metadataFilePath.toString());
     var mapping = getRowToPhsMap(rows);
 
+    var invalidStudyRows = new ArrayList<>();
     if(spreadsheetValidatorResponse != null){
       var reports = spreadsheetValidatorResponse.reports();
       reports.forEach(result-> {
@@ -65,9 +68,20 @@ public class StudyValidityEvaluator {
               result.value()
           );
           validationReports.add(spreadsheetResult);
+          invalidStudyRows.add(result.row());
       });
     }
-    consumer.accept(new EvaluationResult(ERRORS_NUMBER, String.valueOf(validationReports.size())));
+
+    int totalStudies = rows.size();
+    int invalidStudies = invalidStudyRows.size();
+    var rate = (double) (totalStudies - invalidStudies) / totalStudies * 100;
+    String formattedRate = String.format("%.2f%%", rate);
+
+    consumer.accept(new EvaluationResult(VALIDITY,VALIDATION_PASS_RATE, formattedRate));
+    consumer.accept(new EvaluationResult(VALIDITY, NUMBER_OF_INVALID_STUDIES, String.valueOf(invalidStudies)));
+    if(invalidStudies > 0){
+      consumer.accept(new EvaluationResult(VALIDITY, INVALID_STUDIES, invalidStudyRows.toString()));
+    }
     return validationReports;
   }
 

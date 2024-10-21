@@ -1,17 +1,16 @@
 package bmir.radx.metadata.evaluator.study;
 
-import bmir.radx.metadata.evaluator.EvaluationConstant;
+import bmir.radx.metadata.evaluator.EvaluationCriterion;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static bmir.radx.metadata.evaluator.EvaluationConstant.CONSISTENT_STUDY_RATE;
+import static bmir.radx.metadata.evaluator.EvaluationCriterion.CONSISTENCY;
+import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
 
 @Component
 public class StudyConsistencyEvaluator {
@@ -30,10 +29,15 @@ public class StudyConsistencyEvaluator {
         );
       }
     }
-    var totalStudies = rows.size();
-    var rate = (double) (totalStudies - inconsistentMultiSitesRows.size()) / totalStudies * 100;
+    int totalStudies = rows.size();
+    int inconsistentStudies = inconsistentMultiSitesRows.size();
+    var rate = (double) (totalStudies - inconsistentStudies) / totalStudies * 100;
     String formattedRate = String.format("%.2f%%", rate);
-    consumer.accept(new EvaluationResult(CONSISTENT_STUDY_RATE, formattedRate));
+    consumer.accept(new EvaluationResult(CONSISTENCY, CONSISTENT_STUDY_RATE, formattedRate));
+    consumer.accept(new EvaluationResult(CONSISTENCY, NUMBER_OF_INCONSISTENT_STUDIES, String.valueOf(inconsistentStudies)));
+    if(inconsistentStudies > 0){
+      consumer.accept(new EvaluationResult(CONSISTENCY, INCONSISTENT_STUDIES, inconsistentMultiSitesRows.toString()));
+    }
   }
 
   private boolean multiCenterConsistent(StudyMetadataRow row){

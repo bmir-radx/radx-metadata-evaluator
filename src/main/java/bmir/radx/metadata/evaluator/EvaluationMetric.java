@@ -1,8 +1,8 @@
 package bmir.radx.metadata.evaluator;
 
-public enum EvaluationConstant {
+public enum EvaluationMetric {
   ACCESSIBLE_URI_COUNT("Accessible URI Count"),
-  ACCURATE_STUDY_RATE("Accurate Study Rate"),
+
   CONSISTENT_STUDY_RATE("Consistent Study Rate"),
   CONTROLLED_TERMS_FREQUENCY("Controlled Terms Frequency"),
   CONTROLLED_TERMS_DISTRIBUTION("Controlled Terms Distribution"),
@@ -12,6 +12,9 @@ public enum EvaluationConstant {
   ELEMENT_COMPLETION_RATE("Element Completion Rate"),
   ERROR("Error"),
   ERRORS_NUMBER("Errors Number"),
+  ESTIMATED_ACCURATE_STUDY_RATE("Accurate Study Rate"),
+  ESTIMATED_INACCURATE_STUDIES("Inaccurate Studies"),
+  NUMBER_OF_ESTIMATED_INACCURATE_STUDIES("Number of Inaccurate Studies"),
   FILLED_CONTROLLED_TERMS_COUNT("Filled Controlled Terms Count"),
   FILLED_ELEMENTS("Filled Elements"),
   FILLED_ELEMENTS_COUNT("Filled Elements Count"),
@@ -23,7 +26,6 @@ public enum EvaluationConstant {
   FILLED_REQUIRED_FIELDS_COUNT("Filled Required Fields Count"),
   FULL_COMPLETENESS_STUDY_RATIO("Full Completeness Study Ratio"),
   FULL_COMPLETENESS_VARIABLE_RATIO("Full Completeness Variable Ratio"),
-  INACCURATE_STUDIES("Inaccurate Studies"),
   INCOMPLETE_STUDY_ROWS("Incomplete Study Rows"),
   INCOMPLETE_VARIABLES_ROWS("Incomplete Variables Rows"),
   INCONSISTENT_FILE_COUNT("Inconsistent File Count"),
@@ -31,7 +33,6 @@ public enum EvaluationConstant {
   INCONSISTENT_STUDIES("Inconsistent Studies"),
   INCORRECT_CORE_CDES_ROWS("Incorrect Core CDEs Rows"),
   INVALID_STUDIES("Invalid Studies"),
-  NUMBER_OF_INACCURATE_STUDIES("Number of Inaccurate Studies"),
   NUMBER_OF_INCONSISTENT_STUDIES("Number of Inconsistent Studies"),
   NUMBER_OF_INCORRECT_CORE_CDES("Number Of Incorrect Core CDEs"),
   NUMBER_OF_INVALID_STUDIES("Number of Invalid Studies"),
@@ -63,7 +64,7 @@ public enum EvaluationConstant {
 
   private final String displayName;
 
-  EvaluationConstant(String displayName) {
+  EvaluationMetric(String displayName) {
     this.displayName = displayName;
   }
 

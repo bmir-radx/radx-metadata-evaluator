@@ -1,6 +1,6 @@
 package bmir.radx.metadata.evaluator.study;
 
-import bmir.radx.metadata.evaluator.EvaluationConstant;
+import bmir.radx.metadata.evaluator.EvaluationCriterion;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import org.springframework.stereotype.Component;
 
@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import static bmir.radx.metadata.evaluator.EvaluationConstant.DUPLICATE_STUDIES;
-import static bmir.radx.metadata.evaluator.EvaluationConstant.UNIQUENESS;
+import static bmir.radx.metadata.evaluator.EvaluationMetric.DUPLICATE_STUDIES;
+import static bmir.radx.metadata.evaluator.EvaluationMetric.UNIQUENESS;
 
 @Component
 public class StudyUniquenessEvaluator {
@@ -35,9 +35,9 @@ public class StudyUniquenessEvaluator {
     int uniqueStudies = uniquePHS.size();
     var rate = (double) uniqueStudies / totalStudies * 100;
     String formattedRate = String.format("%.2f%%", rate);
-    consumer.accept(new EvaluationResult(UNIQUENESS, formattedRate));
+    consumer.accept(new EvaluationResult(EvaluationCriterion.UNIQUENESS, UNIQUENESS, formattedRate));
     if(!duplicatePHS.isEmpty()){
-      consumer.accept(new EvaluationResult(DUPLICATE_STUDIES, duplicatePHS.toString()));
+      consumer.accept(new EvaluationResult(EvaluationCriterion.UNIQUENESS, DUPLICATE_STUDIES, duplicatePHS.toString()));
     }
   }
 }

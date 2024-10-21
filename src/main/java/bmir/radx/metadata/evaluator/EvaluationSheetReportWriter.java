@@ -40,9 +40,11 @@ public class EvaluationSheetReportWriter {
   public void writeEvaluationReportHeader(Sheet sheet) {
     Row headerRow = sheet.createRow(0);
     Cell headerCell0 = headerRow.createCell(0);
-    headerCell0.setCellValue("Evaluation Type");
+    headerCell0.setCellValue("Evaluation Criterion");
     Cell headerCell1 = headerRow.createCell(1);
-    headerCell1.setCellValue("Content");
+    headerCell1.setCellValue("Metric");
+    Cell headerCell2 = headerRow.createCell(2);
+    headerCell2.setCellValue("Content");
   }
 
   public void writeValidationReportHeader(Sheet sheet, Result sampleResult) {
@@ -67,17 +69,18 @@ public class EvaluationSheetReportWriter {
 
     for (EvaluationResult r : evaluationResults) {
       Row row = sheet.createRow(rowIndex++);
-      String evaluationType = r.getEvaluationConstant().getDisplayName();
-      row.createCell(0).setCellValue(evaluationType);
-      row.createCell(1).setCellValue(r.getContent());
+      String metric = r.getEvaluationMetric().getDisplayName();
+      row.createCell(0).setCellValue(r.getEvaluationCriteria().getCriterion());
+      row.createCell(1).setCellValue(metric);
+      row.createCell(2).setCellValue(r.getContent());
 
       // Check if the evaluation type ends with "DISTRIBUTION"
-      if (evaluationType.endsWith("Distribution")) {
+      if (metric.endsWith("Distribution")) {
         // Extract values from the map format string
         var distributionMap = parseToMap(r.getContent());
 
         // Create the chart using JFreeChart
-        var title = evaluationType.replace("_", " ");
+        var title = metric.replace("_", " ");
         var chartImage = createChartImage(distributionMap, title, sheetName);
 
         // Insert the chart image into the sheet

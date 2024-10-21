@@ -1,5 +1,6 @@
 package bmir.radx.metadata.evaluator.study;
 
+import bmir.radx.metadata.evaluator.EvaluationCriterion;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.sharedComponents.CompletionRateChecker;
 import bmir.radx.metadata.evaluator.sharedComponents.FieldRequirement;
@@ -8,7 +9,9 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 import java.util.function.Consumer;
 
-import static bmir.radx.metadata.evaluator.EvaluationConstant.*;
+import static bmir.radx.metadata.evaluator.EvaluationCriterion.BASIC_INFO;
+import static bmir.radx.metadata.evaluator.EvaluationCriterion.COMPLETENESS;
+import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
 import static bmir.radx.metadata.evaluator.sharedComponents.FieldRequirement.*;
 
 @Component
@@ -43,6 +46,7 @@ public class StudyCompletenessEvaluator {
       filledFieldsMap.put(REQUIRED, result.filledRequiredFields());
       filledFieldsMap.put(RECOMMENDED, result.filledRecommendedFields());
       filledFieldsMap.put(OPTIONAL, result.filledOptionalFields());
+      filledFieldsMap.put(OVERALL, result.totalFilledFields());
 
       for (var requirement : FieldRequirement.values()) {
         int filledFields = filledFieldsMap.get(requirement);
@@ -55,47 +59,15 @@ public class StudyCompletenessEvaluator {
     }
 
     int totalFields = totalRequiredFields + totalRecommendedFields + totalOptionalFields;
-    consumer.accept(new EvaluationResult(TOTAL_NUMBER_OF_STUDIES, String.valueOf(rows.size())));
-    consumer.accept(new EvaluationResult(TOTAL_FIELDS, String.valueOf(totalFields)));
-    consumer.accept(new EvaluationResult(TOTAL_REQUIRED_FIELDS, String.valueOf(totalRequiredFields)));
-    consumer.accept(new EvaluationResult(TOTAL_RECOMMENDED_FIELDS, String.valueOf(totalRecommendedFields)));
-    consumer.accept(new EvaluationResult(TOTAL_OPTIONAL_FIELDS, String.valueOf(totalOptionalFields)));
-    consumer.accept(new EvaluationResult(REQUIRED_FIELDS_COMPLETENESS_DISTRIBUTION, completenessDistribution.get(REQUIRED).toString()));
-    consumer.accept(new EvaluationResult(RECOMMENDED_FIELDS_COMPLETENESS_DISTRIBUTION, completenessDistribution.get(RECOMMENDED).toString()));
-    consumer.accept(new EvaluationResult(OPTIONAL_FIELDS_COMPLETENESS_DISTRIBUTION, completenessDistribution.get(OPTIONAL).toString()));
-
-//    List<Integer> incompleteStudies = new ArrayList<>();
-//    var overallCompleteness = new HashMap<String, Integer>();
-//    var nonEmptyRowCount = rows.stream()
-//        .filter(row -> {
-//          var isComplete = isCompleteStudyRow(row);
-//          if (!isComplete) {
-//            incompleteStudies.add(row.rowNumber());
-//          }
-//          return isComplete;
-//        })
-//        .count();
-//
-//    var ratio = ((double) nonEmptyRowCount / rows.size()) * 100;
-//    consumer.accept(new EvaluationResult(FULL_COMPLETENESS_STUDY_RATIO, String.format("%.2f%%",ratio)));
-//    if (!incompleteStudies.isEmpty()) {
-//      consumer.accept(new EvaluationResult(INCOMPLETE_STUDY_ROWS, incompleteStudies.toString()));
-//    }
-//
-//    rows.forEach(row -> {
-//          var completenessRate = calculateCompletionRate(row);
-//          CompletenessContainer.updateDistribution(completenessRate, overallCompleteness);
-//            }
-//        );
-//    consumer.accept(new EvaluationResult(OVERALL_COMPLETENESS_DISTRIBUTION, overallCompleteness.toString()));
-//
-//    // Calculate completeness rate for each row and update overallCompleteness map
-//    rows.forEach(row -> {
-//      var completenessRate = calculateCompletionRate(row);
-//      updateDistribution(completenessRate, overallCompleteness);
-//    });
-//
-//    consumer.accept(new EvaluationResult(OVERALL_COMPLETION_RATE, overallCompleteness.toString()));
+    consumer.accept(new EvaluationResult(BASIC_INFO, TOTAL_NUMBER_OF_STUDIES, String.valueOf(rows.size())));
+    consumer.accept(new EvaluationResult(BASIC_INFO, TOTAL_FIELDS, String.valueOf(totalFields)));
+    consumer.accept(new EvaluationResult(BASIC_INFO, TOTAL_REQUIRED_FIELDS, String.valueOf(totalRequiredFields)));
+    consumer.accept(new EvaluationResult(BASIC_INFO, TOTAL_RECOMMENDED_FIELDS, String.valueOf(totalRecommendedFields)));
+    consumer.accept(new EvaluationResult(BASIC_INFO, TOTAL_OPTIONAL_FIELDS, String.valueOf(totalOptionalFields)));
+    consumer.accept(new EvaluationResult(COMPLETENESS, REQUIRED_FIELDS_COMPLETENESS_DISTRIBUTION, completenessDistribution.get(REQUIRED).toString()));
+    consumer.accept(new EvaluationResult(COMPLETENESS, RECOMMENDED_FIELDS_COMPLETENESS_DISTRIBUTION, completenessDistribution.get(RECOMMENDED).toString()));
+    consumer.accept(new EvaluationResult(COMPLETENESS, OPTIONAL_FIELDS_COMPLETENESS_DISTRIBUTION, completenessDistribution.get(OPTIONAL).toString()));
+    consumer.accept(new EvaluationResult(COMPLETENESS, OVERALL_COMPLETENESS_DISTRIBUTION, completenessDistribution.get(OVERALL).toString()));
   }
 
   private boolean isCompleteStudyRow(StudyMetadataRow row) {

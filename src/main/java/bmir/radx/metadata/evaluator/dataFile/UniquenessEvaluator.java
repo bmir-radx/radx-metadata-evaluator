@@ -1,5 +1,6 @@
 package bmir.radx.metadata.evaluator.dataFile;
 
+import bmir.radx.metadata.evaluator.EvaluationCriterion;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import org.metadatacenter.artifacts.model.core.InstanceArtifact;
 import org.metadatacenter.artifacts.model.core.TemplateInstanceArtifact;
@@ -8,7 +9,7 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 import java.util.function.Consumer;
 
-import static bmir.radx.metadata.evaluator.EvaluationConstant.*;
+import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
 
 @Component
 public class UniquenessEvaluator {
@@ -34,8 +35,8 @@ public class UniquenessEvaluator {
       }
     }
 
-    handler.accept(new EvaluationResult(DUPLICATE_ELEMENT_INSTANCES_COUNT, String.valueOf(duplicateCount)));
-    handler.accept(new EvaluationResult(DUPLICATE_ELEMENT_INSTANCES, getDuplicateElementInstances(duplicateElementInstances)));
+    handler.accept(new EvaluationResult(EvaluationCriterion.UNIQUENESS, DUPLICATE_ELEMENT_INSTANCES_COUNT, String.valueOf(duplicateCount)));
+    handler.accept(new EvaluationResult(EvaluationCriterion.UNIQUENESS, DUPLICATE_ELEMENT_INSTANCES, getDuplicateElementInstances(duplicateElementInstances)));
   }
 
   private boolean areIdentical(InstanceArtifact f1, InstanceArtifact f2){

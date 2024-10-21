@@ -1,5 +1,6 @@
 package bmir.radx.metadata.evaluator.dataFile;
 
+import bmir.radx.metadata.evaluator.EvaluationCriterion;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.result.JsonValidationResult;
 import edu.stanford.bmir.radx.metadata.validator.lib.*;
@@ -11,7 +12,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static bmir.radx.metadata.evaluator.EvaluationConstant.*;
+import static bmir.radx.metadata.evaluator.EvaluationCriterion.VALIDITY;
+import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
 
 @Component
 public class ValidityEvaluator {
@@ -56,9 +58,9 @@ public class ValidityEvaluator {
       }
 //      consumer.accept(new EvaluationResult(VALIDATION_ERROR_COUNT, String.valueOf(errorCount)));
       if(errorCount > 0){
-        consumer.accept(new EvaluationResult(VALIDATION_ERROR, String.valueOf(errors)));
+        consumer.accept(new EvaluationResult(VALIDITY, VALIDATION_ERROR, String.valueOf(errors)));
       } else{
-        consumer.accept(new EvaluationResult(VALIDATION_ERROR, "null"));
+        consumer.accept(new EvaluationResult(VALIDITY, VALIDATION_ERROR, "null"));
     }
       return errors;
   }

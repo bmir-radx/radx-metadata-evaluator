@@ -1,5 +1,6 @@
 package bmir.radx.metadata.evaluator.dataFile;
 
+import bmir.radx.metadata.evaluator.EvaluationCriterion;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import edu.stanford.bmir.radx.metadata.validator.lib.FieldValues;
 import edu.stanford.bmir.radx.metadata.validator.lib.TemplateInstanceValuesReporter;
@@ -10,7 +11,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static bmir.radx.metadata.evaluator.EvaluationConstant.*;
+import static bmir.radx.metadata.evaluator.EvaluationCriterion.VOCABULARIES_DISTRIBUTION;
+import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
 
 @Component
 public class ControlledTermsEvaluator {
@@ -35,7 +37,7 @@ public class ControlledTermsEvaluator {
       }
     }
 
-    handler.accept(new EvaluationResult(FILLED_CONTROLLED_TERMS_COUNT, String.valueOf(filledCtCounts)));
-    handler.accept(new EvaluationResult(CONTROLLED_TERMS_FREQUENCY, ctFrequency.toString()));
+    handler.accept(new EvaluationResult(VOCABULARIES_DISTRIBUTION, FILLED_CONTROLLED_TERMS_COUNT, String.valueOf(filledCtCounts)));
+    handler.accept(new EvaluationResult(VOCABULARIES_DISTRIBUTION, CONTROLLED_TERMS_FREQUENCY, ctFrequency.toString()));
   }
 }

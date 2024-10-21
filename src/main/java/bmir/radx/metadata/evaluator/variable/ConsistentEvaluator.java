@@ -1,5 +1,6 @@
 package bmir.radx.metadata.evaluator.variable;
 
+import bmir.radx.metadata.evaluator.EvaluationCriterion;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import org.springframework.stereotype.Component;
 
@@ -7,7 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static bmir.radx.metadata.evaluator.EvaluationConstant.*;
+import static bmir.radx.metadata.evaluator.EvaluationCriterion.CONSISTENCY;
+import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
 
 @Component
 public class ConsistentEvaluator {
@@ -30,13 +32,13 @@ public class ConsistentEvaluator {
         fileInconsistentRows.add(row.rowNumber());
       }
     }
-    consumer.accept(new EvaluationResult(NUMBER_OF_INCONSISTENT_STUDIES, String.valueOf(studyInconsistentCount)));
-    consumer.accept(new EvaluationResult(INCONSISTENT_FILE_COUNT, String.valueOf(fileInconsistentCount)));
+    consumer.accept(new EvaluationResult(CONSISTENCY, NUMBER_OF_INCONSISTENT_STUDIES, String.valueOf(studyInconsistentCount)));
+    consumer.accept(new EvaluationResult(CONSISTENCY, INCONSISTENT_FILE_COUNT, String.valueOf(fileInconsistentCount)));
     if(studyInconsistentCount!=0){
-      consumer.accept(new EvaluationResult(INCONSISTENT_STUDY_COUNT_ROWS, studyInconsistentRows.toString()));
+      consumer.accept(new EvaluationResult(CONSISTENCY,INCONSISTENT_STUDIES, studyInconsistentRows.toString()));
     }
     if(fileInconsistentCount!=0){
-      consumer.accept(new EvaluationResult(INCONSISTENT_FILE_COUNT_ROWS, fileInconsistentRows.toString()));
+      consumer.accept(new EvaluationResult(CONSISTENCY, INCONSISTENT_FILE_COUNT_ROWS, fileInconsistentRows.toString()));
     }
   }
 

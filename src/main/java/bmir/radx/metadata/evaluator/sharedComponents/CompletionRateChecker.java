@@ -32,11 +32,13 @@ public class CompletionRateChecker {
         continue;
       }
       totals.put(requirement, totals.get(requirement) + 1);
+      totals.put(OVERALL, totals.get(requirement) + 1);
 
       try {
         var value = field.get(instance);
         if (value != null && !value.equals("")) {
           counts.put(requirement, counts.get(requirement) + 1);
+          counts.put(OVERALL, counts.get(requirement) + 1);
         }
       } catch (IllegalAccessException e) {
         e.printStackTrace();
@@ -56,9 +58,11 @@ public class CompletionRateChecker {
         totals.get(REQUIRED),
         totals.get(RECOMMENDED),
         totals.get(OPTIONAL),
+        totals.get(OVERALL),
         counts.get(REQUIRED),
         counts.get(RECOMMENDED),
-        counts.get(OPTIONAL));
+        counts.get(OPTIONAL),
+        counts.get(OVERALL));
   }
 
   private FieldRequirement getRequirement(String fieldName, TemplateSchemaArtifact templateSchemaArtifact){

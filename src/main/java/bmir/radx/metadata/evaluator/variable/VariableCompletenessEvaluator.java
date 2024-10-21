@@ -1,5 +1,6 @@
 package bmir.radx.metadata.evaluator.variable;
 
+import bmir.radx.metadata.evaluator.EvaluationCriterion;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import org.springframework.stereotype.Component;
 
@@ -7,8 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static bmir.radx.metadata.evaluator.EvaluationConstant.FULL_COMPLETENESS_VARIABLE_RATIO;
-import static bmir.radx.metadata.evaluator.EvaluationConstant.INCOMPLETE_VARIABLES_ROWS;
+import static bmir.radx.metadata.evaluator.EvaluationCriterion.COMPLETENESS;
+import static bmir.radx.metadata.evaluator.EvaluationMetric.FULL_COMPLETENESS_VARIABLE_RATIO;
+import static bmir.radx.metadata.evaluator.EvaluationMetric.INCOMPLETE_VARIABLES_ROWS;
 
 @Component
 public class VariableCompletenessEvaluator{
@@ -25,9 +27,9 @@ public class VariableCompletenessEvaluator{
         .count();
 
     var ratio = ((double)nonEmptyRowCount / rows.size()) * 100;
-    consumer.accept(new EvaluationResult(FULL_COMPLETENESS_VARIABLE_RATIO, String.format("%.2f%%",ratio)));
+    consumer.accept(new EvaluationResult(COMPLETENESS, FULL_COMPLETENESS_VARIABLE_RATIO, String.format("%.2f%%",ratio)));
     if(!incompleteVariables.isEmpty()){
-      consumer.accept(new EvaluationResult(INCOMPLETE_VARIABLES_ROWS, incompleteVariables.toString()));
+      consumer.accept(new EvaluationResult(COMPLETENESS, INCOMPLETE_VARIABLES_ROWS, incompleteVariables.toString()));
     }
   }
 

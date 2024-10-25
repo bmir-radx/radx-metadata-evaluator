@@ -9,6 +9,9 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 @Component
 public class TemplateGetter {
@@ -27,6 +30,10 @@ public class TemplateGetter {
     return getTemplate(dataFileTemplateFileName);
   }
 
+  public String getDataFileTemplateString(){
+    return getTemplateString(dataFileTemplateFileName);
+  }
+
   private TemplateSchemaArtifact getTemplate(String fileName) {
     var jsonSchemaArtifactReader = new JsonSchemaArtifactReader();
     try (InputStream inputStream = TemplateGetter.class.getClassLoader().getResourceAsStream(fileName)) {
@@ -34,6 +41,19 @@ public class TemplateGetter {
       return jsonSchemaArtifactReader.readTemplateSchemaArtifact((ObjectNode) templateNode);
     } catch (IOException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  private String getTemplateString(String fileName){
+    try{
+      var resourceUrl = TemplateGetter.class.getClassLoader().getResource(fileName);
+      if (resourceUrl == null) {
+        throw new IllegalArgumentException(fileName + " not found!");
+      }
+      var path = Paths.get(resourceUrl.toURI());
+      return Files.readString(path);
+    } catch (IOException | URISyntaxException e) {
+      throw new RuntimeException("Error get string for file " + fileName);
     }
   }
 }

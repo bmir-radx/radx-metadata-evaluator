@@ -12,6 +12,8 @@ import org.metadatacenter.artifacts.model.renderer.JsonSchemaArtifactRenderer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Consumer;
@@ -44,10 +46,16 @@ public class DataFileValidityEvaluator {
                                                           ValidationSummary<JsonValidationResult> validationSummary){
     List<JsonValidationResult> results = validationSummary.getValidationResults();
     Set<String> invalidInstances = validationSummary.getInvalidMetadata();
-    var templateString = getTemplateString();
+    var templateString = templateGetter.getDataFileTemplateString();
     for(var instance: templateInstanceArtifacts.entrySet()){
-      var fileName = instance.getKey().getFileName().toString();
-      var instanceString = getInstanceString(instance.getValue());
+      var path  = instance.getKey();
+      var fileName = path.getFileName().toString();
+      String instanceString = null;
+      try {
+        instanceString = Files.readString(path);
+      } catch (IOException e) {
+        throw new RuntimeException("Unable to read file " + path);
+      }
       if(!isValid(fileName, templateString, instanceString, results)){
         invalidInstances.add(fileName);
       }
@@ -105,24 +113,5 @@ public class DataFileValidityEvaluator {
 
   private LiteralFieldValidators getLiteralFieldValidatorsComponent(){
     return new LiteralFieldValidators(new HashMap<>());
-  }
-
-  private String getTemplateString(){
-    var template = templateGetter.getDataFileTemplate();
-    var templateNode = renderer.renderTemplateSchemaArtifact(template);
-    try {
-      return mapper.writeValueAsString(templateNode);
-    } catch (JsonProcessingException e) {
-      throw new RuntimeException("Error processing Data File Template Json");
-    }
-  }
-
-  private String getInstanceString(TemplateInstanceArtifact instanceArtifact){
-    var instanceNode = renderer.renderTemplateInstanceArtifact(instanceArtifact);
-    try {
-      return mapper.writeValueAsString(instanceNode);
-    } catch (JsonProcessingException e) {
-      throw new RuntimeException("Error processing Data File Metadata Instance Json");
-    }
   }
 }

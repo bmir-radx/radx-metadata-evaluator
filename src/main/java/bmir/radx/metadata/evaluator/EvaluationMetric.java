@@ -15,7 +15,7 @@ public enum EvaluationMetric {
   ESTIMATED_ACCURATE_STUDY_RATE("Accurate Study Rate"),
   ESTIMATED_INACCURATE_STUDIES("Inaccurate Studies"),
   NUMBER_OF_ESTIMATED_INACCURATE_STUDIES("Number of Inaccurate Studies"),
-  FILLED_CONTROLLED_TERMS_COUNT("Filled Controlled Terms Count"),
+  FILLED_CONTROLLED_TERMS_COUNT_DISTRIBUTION("Filled Controlled Terms Count"),
   FILLED_ELEMENTS("Filled Elements"),
   FILLED_ELEMENTS_COUNT("Filled Elements Count"),
   FILLED_OPTIONAL_FIELDS("Filled Optional Fields"),
@@ -32,9 +32,11 @@ public enum EvaluationMetric {
   INCONSISTENT_FILE_COUNT_ROWS("Inconsistent File Count Rows"),
   INCONSISTENT_STUDIES("Inconsistent Studies"),
   INCORRECT_CORE_CDES_ROWS("Incorrect Core CDEs Rows"),
+  INVALID_DATA_FILE_METADATA("Invalid Data File Metadata"),
   INVALID_STUDIES("Invalid Studies"),
   NUMBER_OF_INCONSISTENT_STUDIES("Number of Inconsistent Studies"),
   NUMBER_OF_INCORRECT_CORE_CDES("Number Of Incorrect Core CDEs"),
+  NUMBER_OF_INVALID_DATA_FILE_METADATA("Number of Invalid Data File Metadata"),
   NUMBER_OF_INVALID_STUDIES("Number of Invalid Studies"),
   NUMBER_OF_TIER_1_CDES("Number Of Tier 1 CDEs"),
   NUMBER_OF_VALIDATION_ERRORS("Number of Validation Errors"),
@@ -59,7 +61,7 @@ public enum EvaluationMetric {
   URL_COUNT_DISTRIBUTION("URL Count Distribution"),
   VALIDATION_ERROR("Validation Error"),
 
-  VALIDATION_PASS_RATE("Validation Pass Rare");
+  VALIDATION_PASS_RATE("Validation Pass Rate");
 
 
   private final String displayName;

@@ -2,6 +2,7 @@ package bmir.radx.metadata.evaluator.study;
 
 import bmir.radx.metadata.evaluator.EvaluationCriterion;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
+import bmir.radx.metadata.evaluator.result.ValidationSummary;
 import bmir.radx.metadata.evaluator.util.SpreadsheetUpdater;
 import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
 import edu.stanford.bmir.radx.metadata.validator.lib.LiteralFieldValidators;
@@ -45,30 +46,31 @@ public class StudyValidityEvaluator {
     this.validatorFactory = validatorFactory;
   }
 
-  public List<SpreadsheetValidationResult> evaluate(Path metadataFilePath, List<StudyMetadataRow> rows, Consumer<EvaluationResult> consumer){
+  public List<SpreadsheetValidationResult> evaluate(Path metadataFilePath, List<StudyMetadataRow> rows, Consumer<EvaluationResult> consumer, ValidationSummary<SpreadsheetValidationResult> validationSummary){
     var workbook = getWorkbook(metadataFilePath);
     spreadsheetUpdater.addMetadataTab(workbook, templateTitle, templateVersion, templateCreatedOn, templateID);
     spreadsheetUpdater.patchMetadata(workbook, metadataFilePath);
 
     var validator = validatorFactory.createValidator(new LiteralFieldValidators(new HashMap<>()));
-    List<SpreadsheetValidationResult> validationReports = new ArrayList<>();
+    var validationReports = validationSummary.getValidationResults();
     var spreadsheetValidatorResponse = validator.validateSpreadsheet(metadataFilePath.toString());
     var mapping = getRowToPhsMap(rows);
 
-    var invalidStudyRows = new ArrayList<>();
+    var invalidStudyRows = validationSummary.getInvalidMetadata();
     if(spreadsheetValidatorResponse != null){
       var reports = spreadsheetValidatorResponse.reports();
       reports.forEach(result-> {
+          var phs = mapping.get(result.row());
           var spreadsheetResult = new SpreadsheetValidationResult(
               result.errorType(),
               result.column(),
               result.row(),
-              mapping.get(result.row()),
+              phs,
               result.repairSuggestion(),
               result.value()
           );
           validationReports.add(spreadsheetResult);
-          invalidStudyRows.add(result.row());
+          invalidStudyRows.add(phs);
       });
     }
 

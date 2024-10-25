@@ -2,6 +2,7 @@ package bmir.radx.metadata.evaluator.sharedComponents;
 
 import bmir.radx.metadata.evaluator.dataFile.FieldsCollector;
 import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
+import bmir.radx.metadata.evaluator.util.URLCount;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;

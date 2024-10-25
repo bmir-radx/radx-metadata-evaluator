@@ -1,4 +1,4 @@
-package bmir.radx.metadata.evaluator.study;
+package bmir.radx.metadata.evaluator.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -11,14 +11,25 @@ import java.io.IOException;
 import java.io.InputStream;
 
 @Component
-public class StudyTemplateGetter {
+public class TemplateGetter {
   @Value("${study.template.file.name}")
   private String studyTemplateFileName;
 
-  public TemplateSchemaArtifact getTemplate() {
-    var objectMapper = new ObjectMapper();
+  @Value("${data.file.template.file.name}")
+  private String dataFileTemplateFileName;
+  private final ObjectMapper objectMapper = new ObjectMapper();
+
+  public TemplateSchemaArtifact getStudyTemplate() {
+    return getTemplate(studyTemplateFileName);
+  }
+
+  public TemplateSchemaArtifact getDataFileTemplate() {
+    return getTemplate(dataFileTemplateFileName);
+  }
+
+  private TemplateSchemaArtifact getTemplate(String fileName) {
     var jsonSchemaArtifactReader = new JsonSchemaArtifactReader();
-    try (InputStream inputStream = StudyTemplateGetter.class.getClassLoader().getResourceAsStream(studyTemplateFileName)) {
+    try (InputStream inputStream = TemplateGetter.class.getClassLoader().getResourceAsStream(fileName)) {
       var templateNode = objectMapper.readTree(inputStream);
       return jsonSchemaArtifactReader.readTemplateSchemaArtifact((ObjectNode) templateNode);
     } catch (IOException e) {

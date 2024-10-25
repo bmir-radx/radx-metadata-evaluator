@@ -1,9 +1,10 @@
 package bmir.radx.metadata.evaluator.study;
 
-import bmir.radx.metadata.evaluator.EvaluationCriterion;
+import bmir.radx.metadata.evaluator.EvaluationMetric;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.sharedComponents.CompletionRateChecker;
-import bmir.radx.metadata.evaluator.sharedComponents.FieldRequirement;
+import bmir.radx.metadata.evaluator.util.FieldRequirement;
+import bmir.radx.metadata.evaluator.util.TemplateGetter;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -12,172 +13,54 @@ import java.util.function.Consumer;
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.BASIC_INFO;
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.COMPLETENESS;
 import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
-import static bmir.radx.metadata.evaluator.sharedComponents.FieldRequirement.*;
+import static bmir.radx.metadata.evaluator.util.FieldRequirement.*;
 
 @Component
 public class StudyCompletenessEvaluator {
   private final CompletionRateChecker completionRateChecker;
-  private final StudyTemplateGetter studyTemplateGetter;
+  private final TemplateGetter templateGetter;
 
 
-  public StudyCompletenessEvaluator(CompletionRateChecker completionRateChecker, StudyTemplateGetter studyTemplateGetter) {
+  public StudyCompletenessEvaluator(CompletionRateChecker completionRateChecker, TemplateGetter templateGetter) {
     this.completionRateChecker = completionRateChecker;
-    this.studyTemplateGetter = studyTemplateGetter;
+    this.templateGetter = templateGetter;
   }
 
   public void evaluate(List<StudyMetadataRow> rows, Consumer<EvaluationResult> consumer) {
-    var templateSchemaArtifact = studyTemplateGetter.getTemplate();
+    var templateSchemaArtifact = templateGetter.getStudyTemplate();
 
-    Map<FieldRequirement, Map<Integer, Integer>> completenessDistribution = new HashMap<>();
-    for (var requirement : FieldRequirement.values()) {
-      completenessDistribution.put(requirement, new HashMap<>());
-    }
+    Map<FieldRequirement, Map<Integer, Integer>> completenessDistribution = completionRateChecker.initializeCompletenessDistribution();
 
-    int totalRequiredFields = 0;
-    int totalOptionalFields = 0;
-    int totalRecommendedFields = 0;
-    for(var row: rows){
-      var result = completionRateChecker.checkCompletionRate(row, templateSchemaArtifact);
-      totalRequiredFields = result.totalRequiredFields();
-      totalRecommendedFields = result.totalRecommendedFields();
-      totalOptionalFields = result.totalOptionalFields();
+    if (!rows.isEmpty()) {
+      var result = completionRateChecker.getSpreadsheetRowCompleteness(rows.get(0), templateSchemaArtifact);
+      int totalRequiredFields = result.totalRequiredFields();
+      int totalRecommendedFields = result.totalRecommendedFields();
+      int totalOptionalFields = result.totalOptionalFields();
+      int totalFields = result.totalFields();
 
-      Map<FieldRequirement, Integer> filledFieldsMap = new HashMap<>();
-      filledFieldsMap.put(REQUIRED, result.filledRequiredFields());
-      filledFieldsMap.put(RECOMMENDED, result.filledRecommendedFields());
-      filledFieldsMap.put(OPTIONAL, result.filledOptionalFields());
-      filledFieldsMap.put(OVERALL, result.totalFilledFields());
-
-      for (var requirement : FieldRequirement.values()) {
-        int filledFields = filledFieldsMap.get(requirement);
-        Map<Integer, Integer> distributionMap = completenessDistribution.get(requirement);
-        distributionMap.put(
-            filledFields,
-            distributionMap.getOrDefault(filledFields, 0) + 1
-        );
+      for (var row : rows) {
+        result = completionRateChecker.getSpreadsheetRowCompleteness(row, templateSchemaArtifact);
+        completionRateChecker.updateCompletenessDistribution(result, completenessDistribution);
       }
-    }
 
-    int totalFields = totalRequiredFields + totalRecommendedFields + totalOptionalFields;
-    consumer.accept(new EvaluationResult(BASIC_INFO, TOTAL_NUMBER_OF_STUDIES, String.valueOf(rows.size())));
-    consumer.accept(new EvaluationResult(BASIC_INFO, TOTAL_FIELDS, String.valueOf(totalFields)));
-    consumer.accept(new EvaluationResult(BASIC_INFO, TOTAL_REQUIRED_FIELDS, String.valueOf(totalRequiredFields)));
-    consumer.accept(new EvaluationResult(BASIC_INFO, TOTAL_RECOMMENDED_FIELDS, String.valueOf(totalRecommendedFields)));
-    consumer.accept(new EvaluationResult(BASIC_INFO, TOTAL_OPTIONAL_FIELDS, String.valueOf(totalOptionalFields)));
-    consumer.accept(new EvaluationResult(COMPLETENESS, REQUIRED_FIELDS_COMPLETENESS_DISTRIBUTION, completenessDistribution.get(REQUIRED).toString()));
-    consumer.accept(new EvaluationResult(COMPLETENESS, RECOMMENDED_FIELDS_COMPLETENESS_DISTRIBUTION, completenessDistribution.get(RECOMMENDED).toString()));
-    consumer.accept(new EvaluationResult(COMPLETENESS, OPTIONAL_FIELDS_COMPLETENESS_DISTRIBUTION, completenessDistribution.get(OPTIONAL).toString()));
-    consumer.accept(new EvaluationResult(COMPLETENESS, OVERALL_COMPLETENESS_DISTRIBUTION, completenessDistribution.get(OVERALL).toString()));
-  }
+      Map<EvaluationMetric, String> basicInfoResults = Map.of(
+          TOTAL_NUMBER_OF_STUDIES, String.valueOf(rows.size()),
+          TOTAL_FIELDS, String.valueOf(totalFields),
+          TOTAL_REQUIRED_FIELDS, String.valueOf(totalRequiredFields),
+          TOTAL_RECOMMENDED_FIELDS, String.valueOf(totalRecommendedFields),
+          TOTAL_OPTIONAL_FIELDS, String.valueOf(totalOptionalFields)
+      );
+      basicInfoResults.forEach((key, value) -> consumer.accept(new EvaluationResult(BASIC_INFO, key, value)));
 
-  private boolean isCompleteStudyRow(StudyMetadataRow row) {
-    return nonEmptyStringCell(row.studyProgram()) &&
-        nonEmptyStringCell(row.studyPHS()) &&
-        nonEmptyStringCell(row.studyTitle()) &&
-        nonEmptyStringCell(row.description()) &&
-        nonEmptyStringCell(row.radxAcknowledgements()) &&
-        nonEmptyStringCell(row.nihGrantNumber()) &&
-        nonEmptyStringCell(row.rapidsLink()) &&
-        nonEmptyDateCell(row.studyStartDate()) &&
-        nonEmptyDateCell(row.studyEndDate()) &&
-        nonEmptyDateCell(row.studyReleaseDate()) &&
-        nonEmptyDateCell(row.updatedAt()) &&
-        nonEmptyStringCell(row.foaNumber()) &&
-        nonEmptyStringCell(row.foaUrl()) &&
-        nonEmptyStringCell(row.contactPiProjectLeader()) &&
-        nonEmptyStringCell(row.studyDoi()) &&
-        nonEmptyStringCell(row.cdccProvidedPublicationUrls()) &&
-        nonEmptyStringCell(row.clinicalTrialsGovUrl()) &&
-        nonEmptyStringCell(row.studyWebsiteUrl()) &&
-        nonEmptyStringCell(row.studyDesign()) &&
-        nonEmptyStringCell(row.dataTypes()) &&
-        nonEmptyStringCell(row.studyDomain()) &&
-        nonEmptyStringCell(row.nihInstituteOrCenter()) &&
-        nonEmptyBooleanCell(row.multiCenterStudy()) &&
-        nonEmptyStringCell(row.multiCenterSites()) &&
-        nonEmptyStringCell(row.keywords()) &&
-        nonEmptyStringCell(row.dataCollectionMethod()) &&
-        nonEmptyIntCell(row.estimatedCohortSize()) &&
-        nonEmptyStringCell(row.studyPopulationFocus()) &&
-        nonEmptyStringCell(row.species()) &&
-        nonEmptyStringCell(row.consentDataUseLimitations()) &&
-        nonEmptyStringCell(row.studyStatus()) &&
-        nonEmptyBooleanCell(row.hasDataFiles());
-  }
-
-  private double calculateCompletionRate(StudyMetadataRow row) {
-    int totalFields = 32;
-    int nonEmptyFields = 0;
-
-    if (nonEmptyStringCell(row.studyProgram())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.studyPHS())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.studyTitle())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.description())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.radxAcknowledgements())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.nihGrantNumber())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.rapidsLink())) nonEmptyFields++;
-    if (nonEmptyDateCell(row.studyStartDate())) nonEmptyFields++;
-    if (nonEmptyDateCell(row.studyEndDate())) nonEmptyFields++;
-    if (nonEmptyDateCell(row.studyReleaseDate())) nonEmptyFields++;
-    if (nonEmptyDateCell(row.updatedAt())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.foaNumber())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.foaUrl())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.contactPiProjectLeader())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.studyDoi())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.cdccProvidedPublicationUrls())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.clinicalTrialsGovUrl())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.studyWebsiteUrl())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.studyDesign())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.dataTypes())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.studyDomain())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.nihInstituteOrCenter())) nonEmptyFields++;
-    if (nonEmptyBooleanCell(row.multiCenterStudy())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.multiCenterSites())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.keywords())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.dataCollectionMethod())) nonEmptyFields++;
-    if (nonEmptyIntCell(row.estimatedCohortSize())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.studyPopulationFocus())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.species())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.consentDataUseLimitations())) nonEmptyFields++;
-    if (nonEmptyStringCell(row.studyStatus())) nonEmptyFields++;
-    if (nonEmptyBooleanCell(row.hasDataFiles())) nonEmptyFields++;
-
-    return (double) nonEmptyFields / totalFields * 100;
-  }
-
-  private void updateCompletenessDistribution(double completenessRate, Map<String, Integer> overallCompleteness) {
-    int range = (int) (completenessRate / 10) * 10; // Calculate range as 0, 10, 20, ..., 90
-    String key = range + "-" + (range + 10) + "%"; // Format the key as "0-10%", "10-20%", etc.
-    overallCompleteness.merge(key, 1, Integer::sum); // Increment the count for the corresponding range
-  }
-
-  private boolean nonEmptyStringCell(String value) {
-    return value != null && !value.isEmpty();
-  }
-
-  private boolean nonEmptyDateCell(Date value) {
-    return value != null;
-  }
-
-  private boolean nonEmptyBooleanCell(Boolean value) {
-    return value != null;
-  }
-
-  private boolean nonEmptyIntCell(Integer value) {
-    return value != null;
-  }
-
-  private String getRange(double rate) {
-    if (rate >= 0 && rate < 25) {
-      return "0%-25%";
-    } else if (rate >= 25 && rate < 50) {
-      return "25%-50%";
-    } else if (rate >= 50 && rate < 75) {
-      return "50%-75%";
-    } else if (rate >= 75 && rate <= 100) {
-      return "75%-100%";
-    } else {
-      throw new IllegalArgumentException("Rate out of expected range: " + rate);
+      Map<FieldRequirement, EvaluationMetric> completenessKeys = Map.of(
+          REQUIRED, REQUIRED_FIELDS_COMPLETENESS_DISTRIBUTION,
+          RECOMMENDED, RECOMMENDED_FIELDS_COMPLETENESS_DISTRIBUTION,
+          OPTIONAL, OPTIONAL_FIELDS_COMPLETENESS_DISTRIBUTION,
+          OVERALL, OVERALL_COMPLETENESS_DISTRIBUTION
+      );
+      completenessKeys.forEach((requirement, key) ->
+          consumer.accept(new EvaluationResult(COMPLETENESS, key, completenessDistribution.get(requirement).toString()))
+      );
     }
   }
 }

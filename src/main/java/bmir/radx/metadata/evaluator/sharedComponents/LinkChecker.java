@@ -1,12 +1,13 @@
 package bmir.radx.metadata.evaluator.sharedComponents;
 
-import bmir.radx.metadata.evaluator.EvaluationCriterion;
-import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.dataFile.FieldsCollector;
+import bmir.radx.metadata.evaluator.result.JsonValidationResult;
 import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
 import bmir.radx.metadata.evaluator.study.StudyMetadataRow;
+import bmir.radx.metadata.evaluator.util.URLCount;
 import edu.stanford.bmir.radx.metadata.validator.lib.FieldValues;
 import edu.stanford.bmir.radx.metadata.validator.lib.TemplateInstanceValuesReporter;
+import edu.stanford.bmir.radx.metadata.validator.lib.ValidationName;
 import org.metadatacenter.artifacts.model.core.TemplateSchemaArtifact;
 import org.metadatacenter.artifacts.model.core.fields.constraints.ValueConstraints;
 import org.metadatacenter.artifacts.model.visitors.TemplateReporter;
@@ -15,33 +16,60 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.*;
 import java.util.List;
-import java.util.function.Consumer;
 
-import static bmir.radx.metadata.evaluator.EvaluationCriterion.ACCESSIBILITY;
-import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
 import static bmir.radx.metadata.evaluator.study.FieldNameStandardizer.getStandardizedMap;
 import static bmir.radx.metadata.evaluator.study.FieldNameStandardizer.standardizeFieldName;
 
 @Component
 public class LinkChecker {
-  private final FieldsCollector fieldsCollector = new FieldsCollector();
+  private final FieldsCollector fieldsCollector;
 
-  public void evaluate(TemplateReporter templateReporter, TemplateInstanceValuesReporter valuesReporter, Consumer<EvaluationResult> handler){
+  public LinkChecker(FieldsCollector fieldsCollector) {
+    this.fieldsCollector = fieldsCollector;
+  }
+
+  public URLCount checkJson(String fileName,
+                            TemplateReporter templateReporter,
+                            TemplateInstanceValuesReporter valuesReporter,
+                            List<JsonValidationResult> validationResults){
     var values = valuesReporter.getValues();
-    int accessibleUri = 0;
+    var avValues = valuesReporter.getAttributeValueFields();
+    URLCount urlCount = new URLCount(0, 0, 0);
     for(var fieldEntry: values.entrySet()){
       var path = fieldEntry.getKey();
       var valueConstraints = templateReporter.getValueConstraints(path);
       if(valueConstraints.isPresent() && meetCriteria(fieldEntry.getValue(), valueConstraints.get())){
-        accessibleUri++;
+        urlCount.incrementTotalURL();
+        var uri = fieldEntry.getValue().jsonLdId();
+        if(uri.isPresent()){
+          var uriString = uri.get().toString();
+          updateUnresolvableUrlResult(uriString, fileName, path, urlCount, validationResults);
+        } else{
+            urlCount.incrementUnresolvableURL();
+        }
       }
     }
 
-    //todo radx-rad has publication-url
-    handler.accept(new EvaluationResult(ACCESSIBILITY, ACCESSIBLE_URI_COUNT, String.valueOf(accessibleUri)));
+    //note that radx-rad has publication-url in Attribute-Value fields
+    for(var avArtifact: avValues){
+      var value = avArtifact.fieldValues().jsonLdValue();
+      var path = avArtifact.specificationPath();
+      if(value.isPresent() && isValidURL(value.get())){
+        urlCount.incrementTotalURL();
+        if(isUrlResolvable(value.get())){
+          updateUnresolvableUrlResult(value.get(), fileName, path, urlCount, validationResults);
+        } else{
+          urlCount.incrementUnresolvableURL();
+        }
+      }
+    }
+
+    return urlCount;
   }
 
-  public URLCount evaluate(StudyMetadataRow instance, TemplateSchemaArtifact templateSchemaArtifact, List<SpreadsheetValidationResult> validationResults){
+  public URLCount checkSpreadsheet(StudyMetadataRow instance,
+                                   TemplateSchemaArtifact templateSchemaArtifact,
+                                   List<SpreadsheetValidationResult> validationResults){
     var fields = instance.getClass().getDeclaredFields();
     var urlCount = new URLCount(0,0,0);
     var rowNumber = instance.rowNumber();
@@ -69,7 +97,8 @@ public class LinkChecker {
   }
 
   private boolean meetCriteria(FieldValues fieldValues, ValueConstraints valueConstraints){
-    return !fieldsCollector.isEmptyField(fieldValues) && (valueConstraints.isControlledTermValueConstraint() || valueConstraints.isLinkValueConstraint());
+//    return !fieldsCollector.isEmptyField(fieldValues) && (valueConstraints.isControlledTermValueConstraint() || valueConstraints.isLinkValueConstraint());
+    return !fieldsCollector.isEmptyField(fieldValues) && valueConstraints.isLinkValueConstraint();
   }
 
   private boolean meetCriteria(ValueConstraints valueConstraints){
@@ -120,6 +149,29 @@ public class LinkChecker {
       return true;
     } catch (MalformedURLException | UnknownHostException e) {
       return false;
+    }
+  }
+
+  private boolean isValidURL(String urlString){
+    try {
+      new URL(urlString);
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  private void updateUnresolvableUrlResult(String uriString, String fileName, String path, URLCount urlCount, List<JsonValidationResult> validationResults) {
+    if (isUrlResolvable(uriString)) {
+      urlCount.incrementResolvableURL();
+      validationResults.add(
+          new JsonValidationResult(
+              fileName,
+              path,
+              ValidationName.DATA_TYPE_VALIDATION,
+              "Unresolvable URL",
+              null)
+      );
     }
   }
 }

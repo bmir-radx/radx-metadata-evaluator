@@ -2,6 +2,7 @@ package bmir.radx.metadata.evaluator.study;
 
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
+import bmir.radx.metadata.evaluator.result.ValidationSummary;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -20,7 +21,8 @@ public class StudyAccuracyEvaluator {
 
   public void evaluate(List<StudyMetadataRow> metadataRows,
                        Consumer<EvaluationResult> consumer,
-                       List<SpreadsheetValidationResult> validationResults){
+                       ValidationSummary<SpreadsheetValidationResult> validationSummary){
+    var validationResults = validationSummary.getValidationResults();
     var incorrectCtLinks = clinicalTrialsChecker.checkInvalidClinicalTrialsLink(metadataRows, validationResults);
     int totalStudies = metadataRows.size();
     int inAccurateStudies = incorrectCtLinks.size();

@@ -5,5 +5,5 @@ public record SpreadsheetValidationResult(String errorType,
                                           int row,
                                           String phsNumber,
                                           String repairSuggestion,
-                                          Object value) implements Result {
+                                          Object value) implements ValidationResult {
 }

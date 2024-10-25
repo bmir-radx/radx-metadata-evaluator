@@ -4,6 +4,7 @@ import bmir.radx.metadata.evaluator.EvaluationReport;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.SpreadsheetReader;
 import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
+import bmir.radx.metadata.evaluator.sharedComponents.Evaluator;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -13,7 +14,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 @Component
-public class VariableEvaluator {
+public class VariableEvaluator implements Evaluator<SpreadsheetValidationResult> {
   private final VariableCompletenessEvaluator completenessEvaluator;
   private final CoreCdeEvaluator coreCdeEvaluator;
   private final ConsistentEvaluator consistentEvaluator;
@@ -25,7 +26,7 @@ public class VariableEvaluator {
   }
 
   public EvaluationReport<SpreadsheetValidationResult> evaluate(Path metadataFilePath) {
-//  public EvaluationReport evaluate(FileInputStream integratedFileInputStream) {
+//  public EvaluationReport evaluateSingleDataFile(FileInputStream integratedFileInputStream) {
     var results = new ArrayList<EvaluationResult>();
     Consumer<EvaluationResult> consumer = results::add;
     var variableMetadataReader = new SpreadsheetReader();

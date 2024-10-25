@@ -1,4 +1,4 @@
-package bmir.radx.metadata.evaluator.sharedComponents;
+package bmir.radx.metadata.evaluator.util;
 
 public enum FieldRequirement {
   REQUIRED,

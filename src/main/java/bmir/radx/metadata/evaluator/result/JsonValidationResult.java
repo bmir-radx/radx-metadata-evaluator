@@ -6,5 +6,5 @@ public record JsonValidationResult(String fileName,
                                    String pointer,
                                    ValidationName validationName,
                                    String errorMessage,
-                                   String suggestion) implements Result {
+                                   String suggestion) implements ValidationResult {
 }

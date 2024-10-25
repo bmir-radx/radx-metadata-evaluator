@@ -1,6 +1,6 @@
 package bmir.radx.metadata.evaluator;
 
-import bmir.radx.metadata.evaluator.dataFile.BundleFilesEvaluator;
+import bmir.radx.metadata.evaluator.dataFile.DataFileEvaluator;
 import bmir.radx.metadata.evaluator.result.Result;
 import bmir.radx.metadata.evaluator.study.StudyEvaluator;
 import bmir.radx.metadata.evaluator.variable.VariableEvaluator;
@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 @Component
-@Command(name="evaluate",
+@Command(name="evaluateSingleDataFile",
     description = "Evaluate metadata for study, data file and variable entities."
 )
 public class EvaluateCommand implements Callable<Integer> {
@@ -42,13 +42,14 @@ public class EvaluateCommand implements Callable<Integer> {
   private final String variableSheetName = "Variable Evaluation Report";
   private final String dataFileSheetName = "Data File Evaluation Report";
   private final String studySheetName = "Study Evaluation Report";
+  private final String dataFileValidationSheetName = "Data File Validation Report";
   private final String studyValidationSheetName = "Study Validation Report";
   private final VariableEvaluator variableEvaluator;
   private final StudyEvaluator studyEvaluator;
-  private final BundleFilesEvaluator dataFileEvaluator;
+  private final DataFileEvaluator dataFileEvaluator;
   private final EvaluationSheetReportWriter writer;
 
-  public EvaluateCommand(VariableEvaluator variableEvaluator, StudyEvaluator studyEvaluator, BundleFilesEvaluator dataFileEvaluator, EvaluationSheetReportWriter writer) {
+  public EvaluateCommand(VariableEvaluator variableEvaluator, StudyEvaluator studyEvaluator, DataFileEvaluator dataFileEvaluator, EvaluationSheetReportWriter writer) {
     this.variableEvaluator = variableEvaluator;
     this.studyEvaluator = studyEvaluator;
     this.dataFileEvaluator = dataFileEvaluator;
@@ -97,8 +98,9 @@ public class EvaluateCommand implements Callable<Integer> {
     }
 
     if (datafile != null){
-      var report = dataFileEvaluator.evaluate(datafile, out);
+      var report = dataFileEvaluator.evaluate(datafile);
       reports.put(dataFileSheetName, report.evaluationResults());
+      reports.put(dataFileValidationSheetName, report.validationResults());
     }
 
     var workbook = new XSSFWorkbook();

@@ -3,6 +3,7 @@ package bmir.radx.metadata.evaluator.study;
 import bmir.radx.metadata.evaluator.EvaluationCriterion;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
+import bmir.radx.metadata.evaluator.result.ValidationSummary;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -14,11 +15,13 @@ import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
 
 @Component
 public class StudyConsistencyEvaluator {
-  public void evaluate(List<StudyMetadataRow> rows, Consumer<EvaluationResult> consumer, List<SpreadsheetValidationResult> validationResults){
+  public void evaluate(List<StudyMetadataRow> rows, Consumer<EvaluationResult> consumer, ValidationSummary<SpreadsheetValidationResult> validationSummary){
     List<Integer> inconsistentMultiSitesRows = new ArrayList<>();
+    var validationResults = validationSummary.getValidationResults();
     for(var row: rows){
       if (!multiCenterConsistent(row)){
         inconsistentMultiSitesRows.add(row.rowNumber());
+        validationSummary.addInvalidMetadata(row.studyPHS());
         validationResults.add(
             new SpreadsheetValidationResult("Inconsistent Multi-Center Study",
                 "MULTI-CENTER STUDY?",

@@ -1,6 +1,5 @@
 package bmir.radx.metadata.evaluator.util;
 
-import bmir.radx.metadata.evaluator.EvaluationCriterion;
 import bmir.radx.metadata.evaluator.EvaluationMetric;
 import bmir.radx.metadata.evaluator.EvaluationReport;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
@@ -14,7 +13,7 @@ import java.util.function.Consumer;
 
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.*;
 import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
-import static bmir.radx.metadata.evaluator.util.DistributionContainer.*;
+import static bmir.radx.metadata.evaluator.sharedComponents.DistributionManager.*;
 import static bmir.radx.metadata.evaluator.util.StringParser.parseToStringMap;
 
 @Component

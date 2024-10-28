@@ -1,6 +1,7 @@
 package bmir.radx.metadata.evaluator.sharedComponents;
 
 import bmir.radx.metadata.evaluator.dataFile.FieldsCollector;
+import bmir.radx.metadata.evaluator.dataFile.RecommendedFields;
 import bmir.radx.metadata.evaluator.util.FieldRequirement;
 import edu.stanford.bmir.radx.metadata.validator.lib.AttributeValueFieldValues;
 import edu.stanford.bmir.radx.metadata.validator.lib.FieldValues;
@@ -121,7 +122,7 @@ public class CompletionRateChecker {
       var fieldConstraint = templateReporter.getValueConstraints(field);
       if (isRequiredField(fieldConstraint)) {
         requiredFieldCount++;
-      } else if (isRecommendedField(fieldConstraint)) {
+      } else if (isRecommendedField(field)) {
         recommendedFieldCount++;
       } else{
         optionalFieldCount++;
@@ -141,7 +142,7 @@ public class CompletionRateChecker {
       if(!checkedFields.contains(normalizedPath) && !fieldsCollector.isEmptyField(value)){
         if (isRequiredField(fieldConstraint)) {
           filledRequiredFields.add(normalizedPath);
-        } else if (isRecommendedField(fieldConstraint) ) {
+        } else if (isRecommendedField(normalizedPath) ) {
           filledRecommendedFields.add(normalizedPath);
         } else {
           filledOptionalFields.add(normalizedPath);
@@ -188,6 +189,11 @@ public class CompletionRateChecker {
 
   private boolean isRecommendedField(Optional<ValueConstraints> valueConstraints){
     return valueConstraints.map(ValueConstraints::recommendedValue).orElse(false);
+  }
+
+  //RADx Metadata Specification 1.0 doesn't implement recommended option
+  private boolean isRecommendedField(String fieldPath){
+    return RecommendedFields.isRecommendedField(fieldPath);
   }
 
   private int filledAvFields(List<AttributeValueFieldValues> avFields){

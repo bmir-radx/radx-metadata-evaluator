@@ -13,9 +13,8 @@ public class EvaluationReportUpdater {
   public static void updateAccessibilityResult(Integer totalURL, Integer totalResolvableURL, Consumer<EvaluationResult> consumer, Map<Integer, Integer> distribution){
     if(totalURL != 0){
       var rate = (double) totalResolvableURL / totalURL * 100;
-      String formattedRate = String.format("%.2f%%", rate);
-      consumer.accept(new EvaluationResult(ACCESSIBILITY, RESOLVABLE_URL_RATE, formattedRate));
-      consumer.accept(new EvaluationResult(ACCESSIBILITY, URL_COUNT_DISTRIBUTION, distribution.toString()));
+      consumer.accept(new EvaluationResult(ACCESSIBILITY, RESOLVABLE_URL_RATE, rate));
+      consumer.accept(new EvaluationResult(ACCESSIBILITY, URL_COUNT_DISTRIBUTION, distribution));
     }
   }
 }

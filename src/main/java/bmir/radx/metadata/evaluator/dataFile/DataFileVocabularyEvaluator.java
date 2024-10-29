@@ -36,8 +36,8 @@ public class DataFileVocabularyEvaluator {
       evaluateSingleDataFile(templateReporter, instanceReporter, ctFrequency, filledCtCountsFrequency);
     }
 
-    handler.accept(new EvaluationResult(VOCABULARIES_DISTRIBUTION, FILLED_CONTROLLED_TERMS_COUNT_DISTRIBUTION, filledCtCountsFrequency.toString()));
-    handler.accept(new EvaluationResult(VOCABULARIES_DISTRIBUTION, CONTROLLED_TERMS_DISTRIBUTION, ctFrequency.toString()));
+    handler.accept(new EvaluationResult(VOCABULARIES_DISTRIBUTION, FILLED_CONTROLLED_TERMS_COUNT_DISTRIBUTION, filledCtCountsFrequency));
+    handler.accept(new EvaluationResult(VOCABULARIES_DISTRIBUTION, CONTROLLED_TERMS_DISTRIBUTION, ctFrequency));
   }
 
   private void evaluateSingleDataFile(TemplateReporter templateReporter,

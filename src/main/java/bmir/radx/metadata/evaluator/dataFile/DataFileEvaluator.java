@@ -22,17 +22,20 @@ public class DataFileEvaluator implements Evaluator<JsonValidationResult> {
   private final DataFileValidityEvaluator validityEvaluator;
   private final DataFileVocabularyEvaluator dataFileVocabularyEvaluator;
   private final DataFileAccessibilityEvaluator accessibilityEvaluator;
+  private final DataFileAccuracyEvaluator accuracyEvaluator;
 
   public DataFileEvaluator(DataFileMetadataReader dataFileMetadataReader,
                            DataFileCompletenessEvaluator completenessEvaluator,
                            DataFileValidityEvaluator validityEvaluator,
                            DataFileVocabularyEvaluator dataFileVocabularyEvaluator,
-                           DataFileAccessibilityEvaluator accessibilityEvaluator) {
+                           DataFileAccessibilityEvaluator accessibilityEvaluator,
+                           DataFileAccuracyEvaluator accuracyEvaluator) {
     this.dataFileMetadataReader = dataFileMetadataReader;
     this.completenessEvaluator = completenessEvaluator;
     this.validityEvaluator = validityEvaluator;
     this.dataFileVocabularyEvaluator = dataFileVocabularyEvaluator;
     this.accessibilityEvaluator = accessibilityEvaluator;
+    this.accuracyEvaluator = accuracyEvaluator;
   }
 
   public EvaluationReport<JsonValidationResult> evaluate(Path filepath){
@@ -51,6 +54,8 @@ public class DataFileEvaluator implements Evaluator<JsonValidationResult> {
     dataFileVocabularyEvaluator.evaluate(metadataInstancesList, consumer);
     logger.info("Start to evaluate the accessibility of data file metadata");
     accessibilityEvaluator.evaluate(metadataInstances, consumer, validationReport);
+    logger.info("Start to evaluate the accuracy of data file metadata");
+    accuracyEvaluator.evaluate(metadataInstances, consumer, validationReport);
     logger.info("Start to evaluate the validity of data file metadata");
     validityEvaluator.evaluate(metadataInstances, consumer, validationReport);
 

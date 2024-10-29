@@ -77,12 +77,11 @@ public class StudyValidityEvaluator {
     int totalStudies = rows.size();
     int invalidStudies = invalidStudyRows.size();
     var rate = (double) (totalStudies - invalidStudies) / totalStudies * 100;
-    String formattedRate = String.format("%.2f%%", rate);
 
-    consumer.accept(new EvaluationResult(VALIDITY,VALIDATION_PASS_RATE, formattedRate));
-    consumer.accept(new EvaluationResult(VALIDITY, NUMBER_OF_INVALID_STUDIES, String.valueOf(invalidStudies)));
+    consumer.accept(new EvaluationResult(VALIDITY,VALIDATION_PASS_RATE, rate));
+    consumer.accept(new EvaluationResult(VALIDITY, NUMBER_OF_INVALID_STUDIES, invalidStudies));
     if(invalidStudies > 0){
-      consumer.accept(new EvaluationResult(VALIDITY, INVALID_STUDIES, invalidStudyRows.toString()));
+      consumer.accept(new EvaluationResult(VALIDITY, INVALID_STUDIES, invalidStudyRows));
     }
     return validationReports;
   }

@@ -35,11 +35,10 @@ public class StudyConsistencyEvaluator {
     int totalStudies = rows.size();
     int inconsistentStudies = inconsistentMultiSitesRows.size();
     var rate = (double) (totalStudies - inconsistentStudies) / totalStudies * 100;
-    String formattedRate = String.format("%.2f%%", rate);
-    consumer.accept(new EvaluationResult(CONSISTENCY, CONSISTENT_STUDY_RATE, formattedRate));
-    consumer.accept(new EvaluationResult(CONSISTENCY, NUMBER_OF_INCONSISTENT_STUDIES, String.valueOf(inconsistentStudies)));
+    consumer.accept(new EvaluationResult(CONSISTENCY, CONSISTENT_STUDY_RATE, rate));
+    consumer.accept(new EvaluationResult(CONSISTENCY, NUMBER_OF_INCONSISTENT_STUDIES, inconsistentStudies));
     if(inconsistentStudies > 0){
-      consumer.accept(new EvaluationResult(CONSISTENCY, INCONSISTENT_STUDIES, inconsistentMultiSitesRows.toString()));
+      consumer.accept(new EvaluationResult(CONSISTENCY, INCONSISTENT_STUDIES, inconsistentMultiSitesRows));
     }
   }
 

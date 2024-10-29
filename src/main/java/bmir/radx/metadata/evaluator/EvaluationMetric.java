@@ -2,7 +2,7 @@ package bmir.radx.metadata.evaluator;
 
 public enum EvaluationMetric {
   ACCESSIBLE_URI_COUNT("Accessible URI Count"),
-
+  ACCURACY_RATE("Accuracy Rate"),
   CONSISTENT_STUDY_RATE("Consistent Study Rate"),
   CONTROLLED_TERMS_FREQUENCY("Controlled Terms Frequency"),
   CONTROLLED_TERMS_DISTRIBUTION("Controlled Terms Distribution"),
@@ -26,6 +26,7 @@ public enum EvaluationMetric {
   FILLED_REQUIRED_FIELDS_COUNT("Filled Required Fields Count"),
   FULL_COMPLETENESS_STUDY_RATIO("Full Completeness Study Ratio"),
   FULL_COMPLETENESS_VARIABLE_RATIO("Full Completeness Variable Ratio"),
+  INACCURATE_DATA_FILES("Inaccurate data files"),
   INCOMPLETE_STUDY_ROWS("Incomplete Study Rows"),
   INCOMPLETE_VARIABLES_ROWS("Incomplete Variables Rows"),
   INCONSISTENT_FILE_COUNT("Inconsistent File Count"),

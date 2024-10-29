@@ -9,8 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 
-import static bmir.radx.metadata.evaluator.util.ChartCreator.createChartImage;
-import static bmir.radx.metadata.evaluator.util.ChartCreator.insertChartImageIntoSheet;
+import static bmir.radx.metadata.evaluator.util.ChartCreator.*;
 import static bmir.radx.metadata.evaluator.util.StringParser.parseToMap;
 
 @Component
@@ -65,19 +64,35 @@ public class EvaluationSheetReportWriter {
 
   public void writeEvaluationReport(List<EvaluationResult> evaluationResults, Sheet sheet, String sheetName) {
     int rowIndex = 1; // Starting row index for data
-    int currentRowForChart = 15; // Starting row for the first chart
+    int currentRowForChart = 25; // Starting row for the first chart
+
+    //todo calculate record statistics
+//    Map<String, Integer> recordStats = calculateRecordStats(evaluationResults);
+//    int totalRecords = recordStats.get("total");
+//    int validRecords = recordStats.get("valid");
+//    int invalidRecords = recordStats.get("invalid");
+//
+//    // Generate pie chart for record validity distribution
+//    Map<String, Integer> validityDistribution = Map.of(
+//            "Valid", validRecords,
+//            "Invalid", invalidRecords
+//    );
+//
+//    var pieChartImage = createPieChartImage(validityDistribution, "Record Validity Distribution", sheetName);
+//    insertChartImageIntoSheet(sheet, pieChartImage, currentRowForChart, 0);
+//    currentRowForChart += 25; // Move down for other charts
 
     for (EvaluationResult r : evaluationResults) {
       Row row = sheet.createRow(rowIndex++);
       String metric = r.getEvaluationMetric().getDisplayName();
       row.createCell(0).setCellValue(r.getEvaluationCriteria().getCriterion());
       row.createCell(1).setCellValue(metric);
-      row.createCell(2).setCellValue(r.getContent());
+      row.createCell(2).setCellValue(r.getContentAsString());
 
       // Check if the evaluation type ends with "DISTRIBUTION"
       if (metric.endsWith("Distribution")) {
         // Extract values from the map format string
-        var distributionMap = parseToMap(r.getContent());
+        var distributionMap = parseToMap(r.getContentAsString());
 
         // Create the chart using JFreeChart
         var title = metric.replace("_", " ");

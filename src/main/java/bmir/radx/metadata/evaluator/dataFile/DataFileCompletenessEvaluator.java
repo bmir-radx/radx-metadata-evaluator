@@ -48,12 +48,12 @@ public class DataFileCompletenessEvaluator {
         completionRateChecker.updateCompletenessDistribution(completionResult, completenessDistribution);
       }
 
-      Map<EvaluationMetric, String> basicInfoResults = Map.of(
-          TOTAL_NUMBER_OF_DATA_FILES, String.valueOf(metadataInstances.size()),
-          TOTAL_FIELDS, String.valueOf(totalFields),
-          TOTAL_REQUIRED_FIELDS, String.valueOf(totalRequiredFields),
-          TOTAL_RECOMMENDED_FIELDS, String.valueOf(totalRecommendedFields),
-          TOTAL_OPTIONAL_FIELDS, String.valueOf(totalOptionalFields)
+      Map<EvaluationMetric, Integer> basicInfoResults = Map.of(
+          TOTAL_NUMBER_OF_DATA_FILES, metadataInstances.size(),
+          TOTAL_FIELDS, totalFields,
+          TOTAL_REQUIRED_FIELDS, totalRequiredFields,
+          TOTAL_RECOMMENDED_FIELDS, totalRecommendedFields,
+          TOTAL_OPTIONAL_FIELDS, totalOptionalFields
       );
       basicInfoResults.forEach((key, value) -> consumer.accept(new EvaluationResult(BASIC_INFO, key, value)));
 
@@ -64,7 +64,7 @@ public class DataFileCompletenessEvaluator {
           OVERALL, OVERALL_COMPLETENESS_DISTRIBUTION
       );
       completenessKeys.forEach((requirement, key) ->
-          consumer.accept(new EvaluationResult(COMPLETENESS, key, completenessDistribution.get(requirement).toString()))
+          consumer.accept(new EvaluationResult(COMPLETENESS, key, completenessDistribution.get(requirement)))
       );
     }
   }

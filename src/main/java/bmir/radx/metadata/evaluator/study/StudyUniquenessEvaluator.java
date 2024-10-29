@@ -34,10 +34,9 @@ public class StudyUniquenessEvaluator {
     int totalStudies = rows.size();
     int uniqueStudies = uniquePHS.size();
     var rate = (double) uniqueStudies / totalStudies * 100;
-    String formattedRate = String.format("%.2f%%", rate);
-    consumer.accept(new EvaluationResult(EvaluationCriterion.UNIQUENESS, UNIQUENESS, formattedRate));
+    consumer.accept(new EvaluationResult(EvaluationCriterion.UNIQUENESS, UNIQUENESS, rate));
     if(!duplicatePHS.isEmpty()){
-      consumer.accept(new EvaluationResult(EvaluationCriterion.UNIQUENESS, DUPLICATE_STUDIES, duplicatePHS.toString()));
+      consumer.accept(new EvaluationResult(EvaluationCriterion.UNIQUENESS, DUPLICATE_STUDIES, duplicatePHS));
     }
   }
 }

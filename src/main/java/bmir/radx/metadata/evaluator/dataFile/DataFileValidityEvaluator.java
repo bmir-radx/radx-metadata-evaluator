@@ -64,12 +64,11 @@ public class DataFileValidityEvaluator {
     int totalDataFiles = templateInstanceArtifacts.size();
     int invalidDataFiles = invalidInstances.size();
     var rate = (double) (totalDataFiles - invalidDataFiles) / totalDataFiles * 100;
-    String formattedRate = String.format("%.2f%%", rate);
 
-    consumer.accept(new EvaluationResult(VALIDITY, VALIDATION_PASS_RATE, formattedRate));
-    consumer.accept(new EvaluationResult(VALIDITY, NUMBER_OF_INVALID_DATA_FILE_METADATA, String.valueOf(invalidDataFiles)));
+    consumer.accept(new EvaluationResult(VALIDITY, VALIDATION_PASS_RATE, rate));
+    consumer.accept(new EvaluationResult(VALIDITY, NUMBER_OF_INVALID_DATA_FILE_METADATA, invalidDataFiles));
     if(invalidDataFiles > 0){
-      consumer.accept(new EvaluationResult(VALIDITY, INVALID_DATA_FILE_METADATA, invalidInstances.toString()));
+      consumer.accept(new EvaluationResult(VALIDITY, INVALID_DATA_FILE_METADATA, invalidInstances));
     }
   }
 

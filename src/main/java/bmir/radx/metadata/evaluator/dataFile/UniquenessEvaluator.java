@@ -35,7 +35,7 @@ public class UniquenessEvaluator {
       }
     }
 
-    handler.accept(new EvaluationResult(EvaluationCriterion.UNIQUENESS, DUPLICATE_ELEMENT_INSTANCES_COUNT, String.valueOf(duplicateCount)));
+    handler.accept(new EvaluationResult(EvaluationCriterion.UNIQUENESS, DUPLICATE_ELEMENT_INSTANCES_COUNT, duplicateCount));
     handler.accept(new EvaluationResult(EvaluationCriterion.UNIQUENESS, DUPLICATE_ELEMENT_INSTANCES, getDuplicateElementInstances(duplicateElementInstances)));
   }
 

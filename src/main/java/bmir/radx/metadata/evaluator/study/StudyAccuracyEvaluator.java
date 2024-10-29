@@ -27,11 +27,10 @@ public class StudyAccuracyEvaluator {
     int totalStudies = metadataRows.size();
     int inAccurateStudies = incorrectCtLinks.size();
     var rate = (double) (totalStudies - inAccurateStudies) / totalStudies * 100;
-    String formattedRate = String.format("%.2f%%", rate);
-    consumer.accept(new EvaluationResult(ACCURACY, ESTIMATED_ACCURATE_STUDY_RATE, formattedRate));
-    consumer.accept(new EvaluationResult(ACCURACY, NUMBER_OF_ESTIMATED_INACCURATE_STUDIES, String.valueOf(inAccurateStudies)));
+    consumer.accept(new EvaluationResult(ACCURACY, ESTIMATED_ACCURATE_STUDY_RATE, rate));
+    consumer.accept(new EvaluationResult(ACCURACY, NUMBER_OF_ESTIMATED_INACCURATE_STUDIES, inAccurateStudies));
     if(inAccurateStudies > 0){
-      consumer.accept(new EvaluationResult(ACCURACY, ESTIMATED_INACCURATE_STUDIES, incorrectCtLinks.toString()));
+      consumer.accept(new EvaluationResult(ACCURACY, ESTIMATED_INACCURATE_STUDIES, incorrectCtLinks));
     }
   }
 }

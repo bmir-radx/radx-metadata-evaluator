@@ -20,6 +20,7 @@ import java.util.function.Consumer;
 
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.VALIDITY;
 import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
+import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.getIssueType;
 
 @Component
 public class DataFileValidityEvaluator {
@@ -96,7 +97,7 @@ public class DataFileValidityEvaluator {
         errors.add(new JsonValidationResult(
             fileName,
             result.pointer(),
-            result.validationName(),
+            getIssueType(result.validationName()),
             result.message(),
             ""));
       }

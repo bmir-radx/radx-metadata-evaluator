@@ -1,6 +1,5 @@
 package bmir.radx.metadata.evaluator.study;
 
-import bmir.radx.metadata.evaluator.EvaluationCriterion;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
 import bmir.radx.metadata.evaluator.result.ValidationSummary;
@@ -12,6 +11,7 @@ import java.util.function.Consumer;
 
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.CONSISTENCY;
 import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
+import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.INCONSISTENT_RECORD;
 
 @Component
 public class StudyConsistencyEvaluator {
@@ -23,7 +23,7 @@ public class StudyConsistencyEvaluator {
         inconsistentMultiSitesRows.add(row.rowNumber());
         validationSummary.addInvalidMetadata(row.studyPHS());
         validationResults.add(
-            new SpreadsheetValidationResult("Inconsistent Multi-Center Study",
+            new SpreadsheetValidationResult(INCONSISTENT_RECORD,
                 "MULTI-CENTER STUDY?",
                 row.rowNumber(),
                 row.studyPHS(),

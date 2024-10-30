@@ -6,6 +6,7 @@ import bmir.radx.metadata.evaluator.thirdParty.OllamaResponse;
 import bmir.radx.metadata.evaluator.thirdParty.OllamaService;
 import bmir.radx.metadata.evaluator.thirdParty.clinicalTrials.ClinicalTrialsResponse;
 import bmir.radx.metadata.evaluator.thirdParty.clinicalTrials.ClinicalTrialsService;
+import bmir.radx.metadata.evaluator.util.IssueTypeMapping;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
@@ -13,6 +14,8 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+
+import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.INVALID_URL;
 
 @Component
 public class ClinicalTrialsChecker {
@@ -117,7 +120,7 @@ public class ClinicalTrialsChecker {
                                    String phs,
                                    String link){
     var validationResult = new SpreadsheetValidationResult(
-        "Wrong clinicalTrials.gov link",
+        INVALID_URL,
         "CLINICALTRIALS.GOV URL",
         rowNumber,
         phs,

@@ -4,6 +4,7 @@ import bmir.radx.metadata.evaluator.dataFile.FieldsCollector;
 import bmir.radx.metadata.evaluator.result.JsonValidationResult;
 import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
 import bmir.radx.metadata.evaluator.study.StudyMetadataRow;
+import bmir.radx.metadata.evaluator.util.IssueTypeMapping;
 import bmir.radx.metadata.evaluator.util.URLCount;
 import edu.stanford.bmir.radx.metadata.validator.lib.FieldValues;
 import edu.stanford.bmir.radx.metadata.validator.lib.TemplateInstanceValuesReporter;
@@ -19,6 +20,7 @@ import java.util.List;
 
 import static bmir.radx.metadata.evaluator.study.FieldNameStandardizer.getStandardizedMap;
 import static bmir.radx.metadata.evaluator.study.FieldNameStandardizer.standardizeFieldName;
+import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.INVALID_URL;
 
 @Component
 public class LinkChecker {
@@ -120,7 +122,7 @@ public class LinkChecker {
 
       if (!hostResolvable || !urlResolvable) {
         urlCount.incrementUnresolvableURL();
-        var result = new SpreadsheetValidationResult("Unresolvable URL", fieldName, rowNumber, phs, null, url);
+        var result = new SpreadsheetValidationResult(INVALID_URL, fieldName, rowNumber, phs, null, url);
         validationResults.add(result);
       } else {
         urlCount.incrementResolvableURL();
@@ -168,8 +170,8 @@ public class LinkChecker {
           new JsonValidationResult(
               fileName,
               path,
-              ValidationName.DATA_TYPE_VALIDATION,
-              "Unresolvable URL",
+              INVALID_URL,
+              "Invalid URL",
               null)
       );
     }

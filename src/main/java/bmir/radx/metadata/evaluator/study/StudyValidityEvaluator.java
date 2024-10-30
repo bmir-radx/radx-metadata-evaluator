@@ -1,6 +1,5 @@
 package bmir.radx.metadata.evaluator.study;
 
-import bmir.radx.metadata.evaluator.EvaluationCriterion;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.result.ValidationSummary;
 import bmir.radx.metadata.evaluator.util.SpreadsheetUpdater;
@@ -15,7 +14,6 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +21,7 @@ import java.util.function.Consumer;
 
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.VALIDITY;
 import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
+import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.getIssueType;
 
 @Component
 public class StudyValidityEvaluator {
@@ -62,7 +61,7 @@ public class StudyValidityEvaluator {
       reports.forEach(result-> {
           var phs = mapping.get(result.row());
           var spreadsheetResult = new SpreadsheetValidationResult(
-              result.errorType(),
+              getIssueType(result.errorType()),
               result.column(),
               result.row(),
               phs,
@@ -100,7 +99,7 @@ public class StudyValidityEvaluator {
         report.row(),
         report.column(),
         report.value(),
-        report.errorType(),
+        report.issueType(),
         report.repairSuggestion()
     );
   }

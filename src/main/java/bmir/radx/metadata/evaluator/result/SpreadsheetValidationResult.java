@@ -1,6 +1,8 @@
 package bmir.radx.metadata.evaluator.result;
 
-public record SpreadsheetValidationResult(String errorType,
+import bmir.radx.metadata.evaluator.util.IssueTypeMapping;
+
+public record SpreadsheetValidationResult(IssueTypeMapping.IssueType issueType,
                                           String column,
                                           int row,
                                           String phsNumber,

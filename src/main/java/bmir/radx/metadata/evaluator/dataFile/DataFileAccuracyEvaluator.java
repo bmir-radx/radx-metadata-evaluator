@@ -3,7 +3,6 @@ package bmir.radx.metadata.evaluator.dataFile;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.result.JsonValidationResult;
 import bmir.radx.metadata.evaluator.result.ValidationSummary;
-import edu.stanford.bmir.radx.metadata.validator.lib.ValidationName;
 import org.metadatacenter.artifacts.model.core.TemplateInstanceArtifact;
 import org.springframework.stereotype.Component;
 
@@ -12,9 +11,8 @@ import java.util.*;
 import java.util.function.Consumer;
 
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.ACCURACY;
-import static bmir.radx.metadata.evaluator.EvaluationCriterion.VALIDITY;
 import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
-import static edu.stanford.bmir.radx.metadata.validator.lib.ValidationName.ACCURACY_EVALUATION;
+import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.INACCURATE_RECORD;
 
 @Component
 public class DataFileAccuracyEvaluator {
@@ -107,7 +105,7 @@ public class DataFileAccuracyEvaluator {
         if(!isCorrectName(parsedName, providedName)){
             var pointer = getPointer(i, elementName, fieldName);
             var errorMessage = getErrorMessage(fullName, providedName.orElse(null), fieldName);
-            validationSummary.updateValidationResults(List.of(new JsonValidationResult(filePath, pointer, ACCURACY_EVALUATION, errorMessage, parsedName.orElse(null))));
+            validationSummary.updateValidationResults(List.of(new JsonValidationResult(filePath, pointer, INACCURATE_RECORD, errorMessage, parsedName.orElse(null))));
         }
     }
 

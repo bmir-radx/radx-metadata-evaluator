@@ -4,7 +4,6 @@ import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.result.JsonValidationResult;
 import bmir.radx.metadata.evaluator.result.ValidationSummary;
 import bmir.radx.metadata.evaluator.util.TemplateGetter;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.stanford.bmir.radx.metadata.validator.lib.*;
 import org.metadatacenter.artifacts.model.core.TemplateInstanceArtifact;
@@ -67,7 +66,7 @@ public class DataFileValidityEvaluator {
     var rate = (double) (totalDataFiles - invalidDataFiles) / totalDataFiles * 100;
 
     consumer.accept(new EvaluationResult(VALIDITY, VALIDATION_PASS_RATE, rate));
-    consumer.accept(new EvaluationResult(VALIDITY, NUMBER_OF_INVALID_DATA_FILE_METADATA, invalidDataFiles));
+    consumer.accept(new EvaluationResult(VALIDITY, NUMBER_OF_INVALID_RECORDS, invalidDataFiles));
     if(invalidDataFiles > 0){
       consumer.accept(new EvaluationResult(VALIDITY, INVALID_DATA_FILE_METADATA, invalidInstances));
     }

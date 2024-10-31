@@ -1,9 +1,6 @@
 package bmir.radx.metadata.evaluator;
 
-import bmir.radx.metadata.evaluator.result.EvaluationResult;
-import bmir.radx.metadata.evaluator.result.JsonValidationResult;
-import bmir.radx.metadata.evaluator.result.Result;
-import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
+import bmir.radx.metadata.evaluator.result.*;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.stereotype.Component;
 
@@ -14,29 +11,34 @@ import static bmir.radx.metadata.evaluator.util.StringParser.parseToMap;
 
 @Component
 public class EvaluationSheetReportWriter {
-  public <T extends Result> void writeReports(Workbook workbook, Map<String, List<? extends Result>> reports) {
+  public void writeReports(Workbook workbook, Map<String, EvaluationReport<? extends ValidationResult>> reports) {
     for (var entrySet : reports.entrySet()) {
-      var sheetName = entrySet.getKey();
-      var results = entrySet.getValue();
-      var sheet = workbook.createSheet(sheetName);
-
-      // Ensure the results list is not empty to avoid null pointer exceptions
-      if (results.isEmpty()) {
-        continue;
-      }
-
-      // Check if the results are EvaluationResult or ValidationResult and cast accordingly
-      if (results.get(0) instanceof EvaluationResult) {
-        writeEvaluationReportHeader(sheet);
-        writeEvaluationReport((List<EvaluationResult>) results, sheet, sheetName);
-      } else if (results.get(0) instanceof SpreadsheetValidationResult || results.get(0) instanceof JsonValidationResult) {
-        writeValidationReportHeader(sheet, results.get(0));
-        writeValidationResults(results, sheet);
-      }
+      var entity = entrySet.getKey();
+      var report = entrySet.getValue();
+      writeEvaluationReport(entity, report.evaluationResults(), workbook);
+      writeIssuesPage(entity, report.validationResults(), workbook);
     }
   }
 
-  public void writeEvaluationReportHeader(Sheet sheet) {
+  private void writeEvaluationReport(String entity, List<EvaluationResult> evaluationResults, Workbook workbook){
+    if(!evaluationResults.isEmpty()){
+      var eSheetName = entity + " Evaluation Report";
+      var eSheet = workbook.createSheet(eSheetName);
+      writeEvaluationReportHeader(eSheet);
+      writeEvaluationContent(evaluationResults, eSheet, eSheetName);
+    }
+  }
+
+  private <T extends ValidationResult> void writeIssuesPage(String entity, List<T> validationResults, Workbook workbook){
+    if(!validationResults.isEmpty()){
+      var vSheetName = entity + " Validation Report";
+      var vSheet = workbook.createSheet(vSheetName);
+      writeIssuePageHeader(vSheet, validationResults.get(0));
+      writeIssuePageContent(validationResults, vSheet);
+    }
+  }
+
+  private void writeEvaluationReportHeader(Sheet sheet) {
     Row headerRow = sheet.createRow(0);
     Cell headerCell0 = headerRow.createCell(0);
     headerCell0.setCellValue("Evaluation Criterion");
@@ -46,23 +48,23 @@ public class EvaluationSheetReportWriter {
     headerCell2.setCellValue("Content");
   }
 
-  public void writeValidationReportHeader(Sheet sheet, Result sampleResult) {
+  private void writeIssuePageHeader(Sheet sheet, ValidationResult sampleResult) {
     Row headerRow = sheet.createRow(0);
     if (sampleResult instanceof SpreadsheetValidationResult) {
-      createValidationHeader(headerRow, "Row", "Study PHS", "Column", "Value", "Issue Type", "Repair Suggestion");
+      createIssuePageHeader(headerRow, "Row", "Study PHS", "Column", "Value", "Issue Type", "Repair Suggestion");
     } else if (sampleResult instanceof JsonValidationResult) {
-      createValidationHeader(headerRow, "File Name", "Error Pointer", "Issue Type", "Error Message", "Suggestion");
+      createIssuePageHeader(headerRow, "File Name", "Error Pointer", "Issue Type", "Error Message", "Suggestion");
     }
   }
 
-  private void createValidationHeader(Row headerRow, String... headers) {
+  private void createIssuePageHeader(Row headerRow, String... headers) {
     for (int i = 0; i < headers.length; i++) {
       Cell cell = headerRow.createCell(i);
       cell.setCellValue(headers[i]);
     }
   }
 
-  public void writeEvaluationReport(List<EvaluationResult> evaluationResults, Sheet sheet, String sheetName) {
+  private void writeEvaluationContent(List<EvaluationResult> evaluationResults, Sheet sheet, String sheetName) {
     int rowIndex = 1; // Starting row index for data
     int currentRowForChart = 25; // Starting row for the first chart
 
@@ -107,7 +109,7 @@ public class EvaluationSheetReportWriter {
     }
   }
 
-  private <T extends Result> void writeValidationResults(List<T> validationResults, Sheet sheet) {
+  private <T extends ValidationResult> void writeIssuePageContent(List<T> validationResults, Sheet sheet) {
     int rowIndex = 1; // Start after the header
     for (T result : validationResults) {
       Row row = sheet.createRow(rowIndex++);

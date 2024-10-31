@@ -44,7 +44,7 @@ public class StudyCompletenessEvaluator {
       }
 
       Map<EvaluationMetric, Integer> basicInfoResults = Map.of(
-          TOTAL_NUMBER_OF_STUDIES, rows.size(),
+          TOTAL_NUMBER_OF_RECORDS, rows.size(),
           TOTAL_FIELDS, totalFields,
           TOTAL_REQUIRED_FIELDS, totalRequiredFields,
           TOTAL_RECOMMENDED_FIELDS, totalRecommendedFields,

@@ -78,7 +78,7 @@ public class StudyValidityEvaluator {
     var rate = (double) (totalStudies - invalidStudies) / totalStudies * 100;
 
     consumer.accept(new EvaluationResult(VALIDITY,VALIDATION_PASS_RATE, rate));
-    consumer.accept(new EvaluationResult(VALIDITY, NUMBER_OF_INVALID_STUDIES, invalidStudies));
+    consumer.accept(new EvaluationResult(VALIDITY, NUMBER_OF_INVALID_RECORDS, invalidStudies));
     if(invalidStudies > 0){
       consumer.accept(new EvaluationResult(VALIDITY, INVALID_STUDIES, invalidStudyRows));
     }

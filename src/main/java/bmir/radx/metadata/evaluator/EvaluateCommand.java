@@ -2,6 +2,7 @@ package bmir.radx.metadata.evaluator;
 
 import bmir.radx.metadata.evaluator.dataFile.DataFileEvaluator;
 import bmir.radx.metadata.evaluator.result.Result;
+import bmir.radx.metadata.evaluator.result.ValidationResult;
 import bmir.radx.metadata.evaluator.study.StudyEvaluator;
 import bmir.radx.metadata.evaluator.variable.VariableEvaluator;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -20,6 +21,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 @Component
@@ -37,8 +39,12 @@ public class EvaluateCommand implements Callable<Integer> {
   private Path variable;
 
   @Option(names = "--s", description = "Path to the study metadata spreadsheet.")
+
   private Path study;
 
+  private final String variables = "Variables";
+  private final String studies = "Studies";
+  private final String dataFiles = "Data Files";
   private final String variableSheetName = "Variable Evaluation Report";
   private final String dataFileSheetName = "Data File Evaluation Report";
   private final String studySheetName = "Study Evaluation Report";
@@ -72,7 +78,8 @@ public class EvaluateCommand implements Callable<Integer> {
   @Override
   public Integer call() throws Exception {
     var commandLine = new CommandLine(this);
-    var reports = new HashMap<String, List<? extends Result>>();
+//    var reports = new HashMap<String, List<? extends Result>>();
+    Map<String, EvaluationReport<? extends ValidationResult>> reports = new HashMap<>();
 
     if (variable == null && study == null && datafile == null) {
       System.err.println("Please provide at least one metadata file.");
@@ -85,7 +92,7 @@ public class EvaluateCommand implements Callable<Integer> {
         throw new FileNotFoundException("Variable Metadata File not found: " + variable);
       }
       var report = variableEvaluator.evaluate(variable);
-      reports.put(variableSheetName, report.evaluationResults());
+      reports.put(variables, report);
     }
 
     if (study != null) {
@@ -93,14 +100,12 @@ public class EvaluateCommand implements Callable<Integer> {
         throw new FileNotFoundException("Study Metadata File not found: " + study);
       }
       var report = studyEvaluator.evaluate(study);
-      reports.put(studySheetName, report.evaluationResults());
-      reports.put(studyValidationSheetName, report.validationResults());
+      reports.put(studies, report);
     }
 
     if (datafile != null){
       var report = dataFileEvaluator.evaluate(datafile);
-      reports.put(dataFileSheetName, report.evaluationResults());
-      reports.put(dataFileValidationSheetName, report.validationResults());
+      reports.put(dataFiles, report);
     }
 
     var workbook = new XSSFWorkbook();

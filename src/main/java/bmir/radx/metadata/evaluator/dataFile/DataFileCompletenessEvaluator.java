@@ -49,7 +49,7 @@ public class DataFileCompletenessEvaluator {
       }
 
       Map<EvaluationMetric, Integer> basicInfoResults = Map.of(
-          TOTAL_NUMBER_OF_DATA_FILES, metadataInstances.size(),
+          TOTAL_NUMBER_OF_RECORDS, metadataInstances.size(),
           TOTAL_FIELDS, totalFields,
           TOTAL_REQUIRED_FIELDS, totalRequiredFields,
           TOTAL_RECOMMENDED_FIELDS, totalRecommendedFields,

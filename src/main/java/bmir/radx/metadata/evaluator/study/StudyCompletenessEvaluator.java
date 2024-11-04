@@ -3,7 +3,7 @@ package bmir.radx.metadata.evaluator.study;
 import bmir.radx.metadata.evaluator.EvaluationMetric;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.sharedComponents.CompletionRateChecker;
-import bmir.radx.metadata.evaluator.util.FieldRequirement;
+import bmir.radx.metadata.evaluator.util.FieldCategory;
 import bmir.radx.metadata.evaluator.util.TemplateGetter;
 import org.springframework.stereotype.Component;
 
@@ -13,7 +13,7 @@ import java.util.function.Consumer;
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.BASIC_INFO;
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.COMPLETENESS;
 import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
-import static bmir.radx.metadata.evaluator.util.FieldRequirement.*;
+import static bmir.radx.metadata.evaluator.util.FieldCategory.*;
 
 @Component
 public class StudyCompletenessEvaluator {
@@ -29,7 +29,7 @@ public class StudyCompletenessEvaluator {
   public void evaluate(List<StudyMetadataRow> rows, Consumer<EvaluationResult> consumer) {
     var templateSchemaArtifact = templateGetter.getStudyTemplate();
 
-    Map<FieldRequirement, Map<Integer, Integer>> completenessDistribution = completionRateChecker.initializeCompletenessDistribution();
+    Map<FieldCategory, Map<Integer, Integer>> completenessDistribution = completionRateChecker.initializeCompletenessDistribution();
 
     if (!rows.isEmpty()) {
       var result = completionRateChecker.getSpreadsheetRowCompleteness(rows.get(0), templateSchemaArtifact);
@@ -52,7 +52,7 @@ public class StudyCompletenessEvaluator {
       );
       basicInfoResults.forEach((key, value) -> consumer.accept(new EvaluationResult(BASIC_INFO, key, value)));
 
-      Map<FieldRequirement, EvaluationMetric> completenessKeys = Map.of(
+      Map<FieldCategory, EvaluationMetric> completenessKeys = Map.of(
           REQUIRED, REQUIRED_FIELDS_COMPLETENESS_DISTRIBUTION,
           RECOMMENDED, RECOMMENDED_FIELDS_COMPLETENESS_DISTRIBUTION,
           OPTIONAL, OPTIONAL_FIELDS_COMPLETENESS_DISTRIBUTION,

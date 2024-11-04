@@ -115,4 +115,52 @@ public class CompletenessStatistics {
             return CompletenessStatistics.create(this);
         }
     }
+
+    public int getRequiredFields() {
+        return requiredFields;
+    }
+
+    public int getFilledRequiredFields() {
+        return filledRequiredFields;
+    }
+
+    public double getFilledRequiredPercentage() {
+        return filledRequiredPercentage;
+    }
+
+    public int getRecommendedFields() {
+        return recommendedFields;
+    }
+
+    public int getFilledRecommendedFields() {
+        return filledRecommendedFields;
+    }
+
+    public double getFilledRecommendedPercentage() {
+        return filledRecommendedPercentage;
+    }
+
+    public int getOptionalFields() {
+        return optionalFields;
+    }
+
+    public int getFilledOptionalFields() {
+        return filledOptionalFields;
+    }
+
+    public double getFilledOptionalPercentage() {
+        return filledOptionalPercentage;
+    }
+
+    public int getTotalFields() {
+        return totalFields;
+    }
+
+    public int getFilledTotalFields() {
+        return filledTotalFields;
+    }
+
+    public double getFilledTotalPercentage() {
+        return filledTotalPercentage;
+    }
 }

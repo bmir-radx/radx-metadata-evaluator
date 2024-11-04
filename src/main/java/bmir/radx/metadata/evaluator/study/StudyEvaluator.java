@@ -51,10 +51,6 @@ public class StudyEvaluator implements Evaluator<SpreadsheetValidationResult> {
     try {
       var studyMetadataRows = studyMetadataReader.readStudyMetadata(metadataFilePath);
 
-//      var descriptionExplorer = new DescriptionExplorer();
-//      descriptionExplorer.processMetadata(studyMetadataRows, "StudyDescriptions.xlsx");
-//      return null;
-
       logger.info("Start to check completeness of study metadata spreadsheet");
       completenessEvaluator.evaluate(studyMetadataRows, consumer);
 

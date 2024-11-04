@@ -3,7 +3,7 @@ package bmir.radx.metadata.evaluator.dataFile;
 import bmir.radx.metadata.evaluator.EvaluationMetric;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.sharedComponents.CompletionRateChecker;
-import bmir.radx.metadata.evaluator.util.FieldRequirement;
+import bmir.radx.metadata.evaluator.util.FieldCategory;
 import bmir.radx.metadata.evaluator.util.TemplateGetter;
 import edu.stanford.bmir.radx.metadata.validator.lib.*;
 import org.metadatacenter.artifacts.model.core.TemplateInstanceArtifact;
@@ -15,7 +15,7 @@ import java.util.function.Consumer;
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.BASIC_INFO;
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.COMPLETENESS;
 import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
-import static bmir.radx.metadata.evaluator.util.FieldRequirement.*;
+import static bmir.radx.metadata.evaluator.util.FieldCategory.*;
 
 @Component
 public class DataFileCompletenessEvaluator {
@@ -29,8 +29,8 @@ public class DataFileCompletenessEvaluator {
 
   public void evaluate(List<TemplateInstanceArtifact> metadataInstances, Consumer<EvaluationResult> consumer){
     var templateSchemaArtifact = templateGetter.getDataFileTemplate();
-    Map<FieldRequirement, Map<Integer, Integer>> completenessDistribution = new HashMap<>();
-    for (var requirement : FieldRequirement.values()) {
+    Map<FieldCategory, Map<Integer, Integer>> completenessDistribution = new HashMap<>();
+    for (var requirement : FieldCategory.values()) {
       completenessDistribution.put(requirement, new HashMap<>());
     }
 
@@ -57,7 +57,7 @@ public class DataFileCompletenessEvaluator {
       );
       basicInfoResults.forEach((key, value) -> consumer.accept(new EvaluationResult(BASIC_INFO, key, value)));
 
-      Map<FieldRequirement, EvaluationMetric> completenessKeys = Map.of(
+      Map<FieldCategory, EvaluationMetric> completenessKeys = Map.of(
           REQUIRED, REQUIRED_FIELDS_COMPLETENESS_DISTRIBUTION,
           RECOMMENDED, RECOMMENDED_FIELDS_COMPLETENESS_DISTRIBUTION,
           OPTIONAL, OPTIONAL_FIELDS_COMPLETENESS_DISTRIBUTION,

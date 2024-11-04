@@ -2,7 +2,7 @@ package bmir.radx.metadata.evaluator.sharedComponents;
 
 import bmir.radx.metadata.evaluator.dataFile.FieldsCollector;
 import bmir.radx.metadata.evaluator.dataFile.RecommendedFields;
-import bmir.radx.metadata.evaluator.util.FieldRequirement;
+import bmir.radx.metadata.evaluator.util.FieldCategory;
 import edu.stanford.bmir.radx.metadata.validator.lib.AttributeValueFieldValues;
 import edu.stanford.bmir.radx.metadata.validator.lib.FieldValues;
 import edu.stanford.bmir.radx.metadata.validator.lib.TemplateInstanceValuesReporter;
@@ -17,7 +17,7 @@ import java.util.*;
 import static bmir.radx.metadata.evaluator.sharedComponents.DistributionManager.updateDistribution;
 import static bmir.radx.metadata.evaluator.study.FieldNameStandardizer.getStandardizedMap;
 import static bmir.radx.metadata.evaluator.study.FieldNameStandardizer.standardizeFieldName;
-import static bmir.radx.metadata.evaluator.util.FieldRequirement.*;
+import static bmir.radx.metadata.evaluator.util.FieldCategory.*;
 
 @Component
 public class CompletionRateChecker {
@@ -28,19 +28,19 @@ public class CompletionRateChecker {
   }
 
 
-  public Map<FieldRequirement, Map<Integer, Integer>> initializeCompletenessDistribution() {
-    Map<FieldRequirement, Map<Integer, Integer>> completenessDistribution = new HashMap<>();
-    for (var requirement : FieldRequirement.values()) {
+  public Map<FieldCategory, Map<Integer, Integer>> initializeCompletenessDistribution() {
+    Map<FieldCategory, Map<Integer, Integer>> completenessDistribution = new HashMap<>();
+    for (var requirement : FieldCategory.values()) {
       completenessDistribution.put(requirement, new HashMap<>());
     }
     return completenessDistribution;
   }
 
   public <T> CompletionResult getSpreadsheetRowCompleteness(T instance, TemplateSchemaArtifact template) {
-    Map<FieldRequirement, Integer> counts = new HashMap<>();
-    Map<FieldRequirement, Integer> totals = new HashMap<>();
+    Map<FieldCategory, Integer> counts = new HashMap<>();
+    Map<FieldCategory, Integer> totals = new HashMap<>();
 
-    for (var requirement : FieldRequirement.values()) {
+    for (var requirement : FieldCategory.values()) {
       counts.put(requirement, 0);
       totals.put(requirement, 0);
     }
@@ -68,8 +68,8 @@ public class CompletionRateChecker {
       }
     }
 
-    Map<FieldRequirement, Double> completionRates = new HashMap<>();
-    for (FieldRequirement requirement : FieldRequirement.values()) {
+    Map<FieldCategory, Double> completionRates = new HashMap<>();
+    for (FieldCategory requirement : FieldCategory.values()) {
       int totalCount = totals.get(requirement);
       int completedCount = counts.get(requirement);
       double completionRate = totalCount > 0 ? (double) completedCount / totalCount : 0.0;
@@ -88,14 +88,14 @@ public class CompletionRateChecker {
         counts.get(OVERALL));
   }
 
-  public void updateCompletenessDistribution(CompletionResult result, Map<FieldRequirement, Map<Integer, Integer>> completenessDistribution){
-    Map<FieldRequirement, Integer> filledFieldsMap = new HashMap<>();
+  public void updateCompletenessDistribution(CompletionResult result, Map<FieldCategory, Map<Integer, Integer>> completenessDistribution){
+    Map<FieldCategory, Integer> filledFieldsMap = new HashMap<>();
     filledFieldsMap.put(REQUIRED, result.filledRequiredFields());
     filledFieldsMap.put(RECOMMENDED, result.filledRecommendedFields());
     filledFieldsMap.put(OPTIONAL, result.filledOptionalFields());
     filledFieldsMap.put(OVERALL, result.totalFilledFields());
 
-    for (var requirement : FieldRequirement.values()) {
+    for (var requirement : FieldCategory.values()) {
       int filledFields = filledFieldsMap.get(requirement);
       Map<Integer, Integer> distributionMap = completenessDistribution.get(requirement);
       updateDistribution(filledFields, distributionMap);
@@ -159,7 +159,7 @@ public class CompletionRateChecker {
     int filledElementCount = filledElements.size();
     int totalFilledFieldCount = filledRequiredFieldCount + filledRecommendedFieldCount + filledOptionalFieldCount;
 
-    Map<FieldRequirement, Double> completionRates = new HashMap<>();
+    Map<FieldCategory, Double> completionRates = new HashMap<>();
     var requiredCompleteness = ((double)filledRequiredFieldCount/requiredFieldCount) * 100;
     var recommendedCompleteness = ((double)filledRecommendedFieldCount/recommendedFieldCount) * 100;
     var optionalCompleteness = ((double) filledOptionalFieldCount/ optionalFieldCount) * 100;
@@ -249,7 +249,7 @@ public class CompletionRateChecker {
     return new HashSet<>(childElements);
   }
 
-  private FieldRequirement getRequirement(String fieldName, TemplateSchemaArtifact templateSchemaArtifact){
+  private FieldCategory getRequirement(String fieldName, TemplateSchemaArtifact templateSchemaArtifact){
     var templateReporter = new TemplateReporter(templateSchemaArtifact);
     var standardizedMap = getStandardizedMap(templateSchemaArtifact);
     var fieldPath = "/" + standardizedMap.get(standardizeFieldName(fieldName));
@@ -260,9 +260,9 @@ public class CompletionRateChecker {
     if(fieldArtifact.get().requiredValue()){
       return REQUIRED;
     } else if (fieldArtifact.get().valueConstraints().get().recommendedValue()) {
-      return FieldRequirement.RECOMMENDED;
+      return FieldCategory.RECOMMENDED;
     } else{
-      return FieldRequirement.OPTIONAL;
+      return FieldCategory.OPTIONAL;
     }
   }
 }

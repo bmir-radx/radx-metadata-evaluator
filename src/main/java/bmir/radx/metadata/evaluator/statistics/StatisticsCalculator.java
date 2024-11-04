@@ -33,7 +33,7 @@ public class StatisticsCalculator {
         return RecordStatistics.builder()
                 .totalRecords(totalRecords)
                 .invalidRecords(invalidRecords)
-                .validRecords(totalRecords)
+                .validRecords(validRecords)
                 .invalidPercentage(invalidPercentage)
                 .validPercentage(validPercentage)
                 .build();

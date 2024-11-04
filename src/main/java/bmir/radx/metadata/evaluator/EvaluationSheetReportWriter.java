@@ -1,11 +1,17 @@
 package bmir.radx.metadata.evaluator;
 
 import bmir.radx.metadata.evaluator.result.*;
+import bmir.radx.metadata.evaluator.statistics.CompletenessStatistics;
+import bmir.radx.metadata.evaluator.statistics.IssueTypeStatistics;
+import bmir.radx.metadata.evaluator.statistics.RecordStatistics;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.util.*;
 
+import static bmir.radx.metadata.evaluator.statistics.ChartDataFactory.*;
+import static bmir.radx.metadata.evaluator.statistics.StatisticsCalculator.*;
 import static bmir.radx.metadata.evaluator.util.ChartCreator.*;
 import static bmir.radx.metadata.evaluator.util.StringParser.parseToMap;
 
@@ -15,17 +21,21 @@ public class EvaluationSheetReportWriter {
     for (var entrySet : reports.entrySet()) {
       var entity = entrySet.getKey();
       var report = entrySet.getValue();
-      writeEvaluationReport(entity, report.evaluationResults(), workbook);
+      writeEvaluationReport(entity, report, workbook);
       writeIssuesPage(entity, report.validationResults(), workbook);
     }
   }
 
-  private void writeEvaluationReport(String entity, List<EvaluationResult> evaluationResults, Workbook workbook){
+  private void writeEvaluationReport(String entity, EvaluationReport<? extends ValidationResult> report, Workbook workbook){
+    var evaluationResults = report.evaluationResults();
     if(!evaluationResults.isEmpty()){
       var eSheetName = entity + " Evaluation Report";
       var eSheet = workbook.createSheet(eSheetName);
+      var recordStats = calculateRecordStats(report);
+      var issueTypeStats = calculateIssueTypeStatistics(report);
+      var completionStats = calculateCompletenessStatistics(report);
       writeEvaluationReportHeader(eSheet);
-      writeEvaluationContent(evaluationResults, eSheet, eSheetName);
+      writeEvaluationContent(evaluationResults, eSheet, eSheetName, recordStats, issueTypeStats, completionStats);
     }
   }
 
@@ -64,25 +74,32 @@ public class EvaluationSheetReportWriter {
     }
   }
 
-  private void writeEvaluationContent(List<EvaluationResult> evaluationResults, Sheet sheet, String sheetName) {
+  private void writeEvaluationContent(List<EvaluationResult> evaluationResults,
+                                      Sheet sheet,
+                                      String sheetName,
+                                      RecordStatistics recordStatistics,
+                                      List<IssueTypeStatistics> issueTypeStatistics,
+                                      CompletenessStatistics completenessStatistics) {
     int rowIndex = 1; // Starting row index for data
     int currentRowForChart = 25; // Starting row for the first chart
 
-    //todo calculate record statistics
-//    Map<String, Integer> recordStats = calculateRecordStats(evaluationResults);
-//    int totalRecords = recordStats.get("total");
-//    int validRecords = recordStats.get("valid");
-//    int invalidRecords = recordStats.get("invalid");
-//
-//    // Generate pie chart for record validity distribution
-//    Map<String, Integer> validityDistribution = Map.of(
-//            "Valid", validRecords,
-//            "Invalid", invalidRecords
-//    );
-//
-//    var pieChartImage = createPieChartImage(validityDistribution, "Record Validity Distribution", sheetName);
-//    insertChartImageIntoSheet(sheet, pieChartImage, currentRowForChart, 0);
-//    currentRowForChart += 25; // Move down for other charts
+    //generate validity pie chart
+    var validityDistribution = getValidityDistribution(recordStatistics);
+    var validityPieChart = createPieChartImage(validityDistribution, "Records by Validity");
+    insertChartImageIntoSheet(sheet, validityPieChart, currentRowForChart, 0);
+    currentRowForChart += 25; // Move down for other charts
+
+    //generate issueType pie chart
+    var issueTypeDistribution = getIssueTypeDistribution(issueTypeStatistics);
+    var issueTypePieChart = createPieChartImage(issueTypeDistribution, "Records by Issue Type");
+    insertChartImageIntoSheet(sheet, issueTypePieChart, currentRowForChart, 0);
+    currentRowForChart += 25;
+
+    //generate completion bar chart
+    var completion = getCompletenessDistribution(completenessStatistics);
+    var completionBarChart = createCompletionBarChart(completion, "Fields Completeness");
+    insertChartImageIntoSheet(sheet, completionBarChart, currentRowForChart, 0);
+    currentRowForChart += 25;
 
     for (EvaluationResult r : evaluationResults) {
       Row row = sheet.createRow(rowIndex++);
@@ -98,7 +115,7 @@ public class EvaluationSheetReportWriter {
 
         // Create the chart using JFreeChart
         var title = metric.replace("_", " ");
-        var chartImage = createChartImage(distributionMap, title, sheetName);
+        var chartImage = createDistributionChart(distributionMap, title, sheetName);
 
         // Insert the chart image into the sheet
         insertChartImageIntoSheet(sheet, chartImage, currentRowForChart, 0);

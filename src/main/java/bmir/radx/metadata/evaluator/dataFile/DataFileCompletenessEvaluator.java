@@ -50,10 +50,10 @@ public class DataFileCompletenessEvaluator {
 
       Map<EvaluationMetric, Integer> basicInfoResults = Map.of(
           TOTAL_NUMBER_OF_RECORDS, metadataInstances.size(),
-          TOTAL_FIELDS, totalFields,
-          TOTAL_REQUIRED_FIELDS, totalRequiredFields,
-          TOTAL_RECOMMENDED_FIELDS, totalRecommendedFields,
-          TOTAL_OPTIONAL_FIELDS, totalOptionalFields
+          TOTAL_FIELDS_PER_RECORD, totalFields,
+          REQUIRED_FIELDS_PER_RECORD, totalRequiredFields,
+          RECOMMENDED_FIELDS_PER_RECORD, totalRecommendedFields,
+          OPTIONAL_FIELDS_PER_RECORD, totalOptionalFields
       );
       basicInfoResults.forEach((key, value) -> consumer.accept(new EvaluationResult(BASIC_INFO, key, value)));
 

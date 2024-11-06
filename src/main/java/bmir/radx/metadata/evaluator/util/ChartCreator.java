@@ -180,6 +180,8 @@ public class ChartCreator {
     plot.setLabelGenerator(new StandardPieSectionLabelGenerator("{0} ({1}, {2})"));
     plot.setBackgroundPaint(Color.WHITE);
     plot.setInteriorGap(0.04);
+    plot.setCircular(true);    // Ensures the chart is circular (2D appearance)
+    plot.setShadowPaint(null);  // Remove shadow to ensure a flat 2D look
 
     // Convert the chart to a BufferedImage
     int width = 600;

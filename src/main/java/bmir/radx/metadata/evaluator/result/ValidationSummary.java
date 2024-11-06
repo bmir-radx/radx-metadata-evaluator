@@ -36,4 +36,8 @@ public class ValidationSummary<T extends ValidationResult> {
   public void updateValidationResults(List<T> newValidationResults) {
     this.validationResults.addAll(newValidationResults);
   }
+
+  public void updateValidationResult(T newValidationResult){
+    this.validationResults.add(newValidationResult);
+  }
 }

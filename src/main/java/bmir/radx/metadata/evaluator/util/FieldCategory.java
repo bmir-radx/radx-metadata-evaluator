@@ -1,5 +1,7 @@
 package bmir.radx.metadata.evaluator.util;
 
+import java.util.Arrays;
+
 public enum FieldCategory {
   REQUIRED("Required"),
   RECOMMENDED("Recommended"),
@@ -15,5 +17,12 @@ public enum FieldCategory {
   public String getCategory() {
     return category;
   }
+
+  public static String[] getCategoryNames() {
+    return Arrays.stream(FieldCategory.values())
+        .map(FieldCategory::getCategory)
+        .toArray(String[]::new);
+  }
+
 }
 

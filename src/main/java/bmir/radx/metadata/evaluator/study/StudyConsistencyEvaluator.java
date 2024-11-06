@@ -16,11 +16,11 @@ import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.INCON
 @Component
 public class StudyConsistencyEvaluator {
   public void evaluate(List<StudyMetadataRow> rows, Consumer<EvaluationResult> consumer, ValidationSummary<SpreadsheetValidationResult> validationSummary){
-    List<Integer> inconsistentMultiSitesRows = new ArrayList<>();
+    List<String> inconsistentMultiSitesRows = new ArrayList<>();
     var validationResults = validationSummary.getValidationResults();
     for(var row: rows){
       if (!multiCenterConsistent(row)){
-        inconsistentMultiSitesRows.add(row.rowNumber());
+        inconsistentMultiSitesRows.add(row.studyPHS());
         validationSummary.addInvalidMetadata(row.studyPHS());
         validationResults.add(
             new SpreadsheetValidationResult(INCONSISTENT_RECORD,

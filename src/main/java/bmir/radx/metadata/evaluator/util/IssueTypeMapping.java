@@ -8,23 +8,35 @@ import java.util.Map;
 
 public class IssueTypeMapping {
     public enum IssueType {
-        MISSING_REQUIRED,
-        INVALID_JSON,
-        INVALID_CEDAR_MODEL,
-        SANITATION_ISSUE,
-        INVALID_JSON_SCHEMA,
-        INVALID_INSTANCE_ARTIFACT_SCHEMA,
-        CONSTRAINT_VIOLATION,
-        CARDINALITY_ISSUE,
-        LITERAL_FIELD_ISSUE,
-        UNKNOWN_ISSUE,
-        INACCURATE_RECORD,
-        INCONSISTENT_RECORD,
-        DUPLICATE_RECORD,
-        INVALID_SCHEMA_ID,
-        NON_STANFORD_TERM,
-        INVALID_VALUE_ENCODING,
-        INVALID_URL
+        MISSING_REQUIRED("Missing Required Field"),
+        INVALID_JSON("Invalid JSON Format"),
+        INVALID_CEDAR_MODEL("Invalid CEDAR Model"),
+        SANITATION_ISSUE("Sanitation Issue"),
+        INVALID_JSON_SCHEMA("Invalid JSON Schema"),
+        INVALID_INSTANCE_ARTIFACT_SCHEMA("Invalid Instance Artifact Schema"),
+        CONSTRAINT_VIOLATION("Constraint Violation"),
+        CARDINALITY_ISSUE("Cardinality Issue"),
+        LITERAL_FIELD_ISSUE("Literal Field Issue"),
+        UNKNOWN_ISSUE("Unknown Issue"),
+        INACCURATE_RECORD("Inaccurate Record"),
+        INCONSISTENT_RECORD("Inconsistent Record"),
+        DUPLICATE_RECORD("Duplicate Record"),
+        INVALID_SCHEMA_ID("Invalid Schema ID"),
+        NON_STANFORD_TERM("Non-Stanford Term"),
+        INVALID_VALUE_ENCODING("Invalid Value Encoding"),
+        INVALID_URL("Invalid URL");
+
+        private final String name;
+
+        // Constructor to initialize the name
+        IssueType(String name) {
+            this.name = name;
+        }
+
+        // Getter for the name
+        public String getName() {
+            return name;
+        }
     }
 
     private static final Map<ValidationName, IssueType> validationToIssueTypeMap = new EnumMap<>(ValidationName.class);

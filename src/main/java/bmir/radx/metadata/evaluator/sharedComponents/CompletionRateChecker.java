@@ -37,11 +37,11 @@ public class CompletionRateChecker {
   }
 
   public <T> CompletionResult getSpreadsheetRowCompleteness(T instance, TemplateSchemaArtifact template) {
-    Map<FieldCategory, Integer> counts = new HashMap<>();
+    Map<FieldCategory, Integer> filled = new HashMap<>();
     Map<FieldCategory, Integer> totals = new HashMap<>();
 
     for (var requirement : FieldCategory.values()) {
-      counts.put(requirement, 0);
+      filled.put(requirement, 0);
       totals.put(requirement, 0);
     }
 
@@ -55,13 +55,13 @@ public class CompletionRateChecker {
         continue;
       }
       totals.put(requirement, totals.get(requirement) + 1);
-      totals.put(OVERALL, totals.get(requirement) + 1);
+      totals.put(OVERALL, totals.get(OVERALL) + 1);
 
       try {
         var value = field.get(instance);
         if (value != null && !value.equals("")) {
-          counts.put(requirement, counts.get(requirement) + 1);
-          counts.put(OVERALL, counts.get(requirement) + 1);
+          filled.put(requirement, filled.get(requirement) + 1);
+          filled.put(OVERALL, filled.get(OVERALL) + 1);
         }
       } catch (IllegalAccessException e) {
         e.printStackTrace();
@@ -71,7 +71,7 @@ public class CompletionRateChecker {
     Map<FieldCategory, Double> completionRates = new HashMap<>();
     for (FieldCategory requirement : FieldCategory.values()) {
       int totalCount = totals.get(requirement);
-      int completedCount = counts.get(requirement);
+      int completedCount = filled.get(requirement);
       double completionRate = totalCount > 0 ? (double) completedCount / totalCount : 0.0;
       completionRates.put(requirement, completionRate);
     }
@@ -82,10 +82,10 @@ public class CompletionRateChecker {
         totals.get(RECOMMENDED),
         totals.get(OPTIONAL),
         totals.get(OVERALL),
-        counts.get(REQUIRED),
-        counts.get(RECOMMENDED),
-        counts.get(OPTIONAL),
-        counts.get(OVERALL));
+        filled.get(REQUIRED),
+        filled.get(RECOMMENDED),
+        filled.get(OPTIONAL),
+        filled.get(OVERALL));
   }
 
   public void updateCompletenessDistribution(CompletionResult result, Map<FieldCategory, Map<Integer, Integer>> completenessDistribution){

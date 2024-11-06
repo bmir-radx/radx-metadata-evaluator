@@ -1,9 +1,7 @@
 package bmir.radx.metadata.evaluator.statistics;
 
-import bmir.radx.metadata.evaluator.EvaluationMetric;
 import bmir.radx.metadata.evaluator.EvaluationReport;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
-import bmir.radx.metadata.evaluator.result.ValidationResult;
 import bmir.radx.metadata.evaluator.util.IssueTypeMapping;
 
 import java.util.ArrayList;
@@ -53,13 +51,13 @@ public class StatisticsCalculator {
         for (EvaluationResult result : evaluationReport.evaluationResults()) {
             if (TOTAL_NUMBER_OF_RECORDS.equals(result.getEvaluationMetric())) {
                 totalRecords = result.getContentAsInteger();
-            } else if (TOTAL_REQUIRED_FIELDS.equals(result.getEvaluationMetric())) {
+            } else if (REQUIRED_FIELDS_PER_RECORD.equals(result.getEvaluationMetric())) {
                 totalRequiredFields = result.getContentAsInteger();
-            } else if (TOTAL_RECOMMENDED_FIELDS.equals(result.getEvaluationMetric())) {
+            } else if (RECOMMENDED_FIELDS_PER_RECORD.equals(result.getEvaluationMetric())) {
                 totalRecommendedFields = result.getContentAsInteger();
-            } else if (TOTAL_OPTIONAL_FIELDS.equals(result.getEvaluationMetric())) {
+            } else if (OPTIONAL_FIELDS_PER_RECORD.equals(result.getEvaluationMetric())) {
                 totalOptionalFields = result.getContentAsInteger();
-            } else if (TOTAL_FIELDS.equals(result.getEvaluationMetric())) {
+            } else if (TOTAL_FIELDS_PER_RECORD.equals(result.getEvaluationMetric())) {
                 totalFields = result.getContentAsInteger();
             } else if (REQUIRED_FIELDS_COMPLETENESS_DISTRIBUTION.equals(result.getEvaluationMetric())) {
                 Map<Integer, Integer> distribution = result.getContentAsMapIntegerInteger();

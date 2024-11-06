@@ -45,17 +45,15 @@ public class StudyValidityEvaluator {
     this.validatorFactory = validatorFactory;
   }
 
-  public List<SpreadsheetValidationResult> evaluate(Path metadataFilePath, List<StudyMetadataRow> rows, Consumer<EvaluationResult> consumer, ValidationSummary<SpreadsheetValidationResult> validationSummary){
+  public void evaluate(Path metadataFilePath, List<StudyMetadataRow> rows, Consumer<EvaluationResult> consumer, ValidationSummary<SpreadsheetValidationResult> validationSummary){
     var workbook = getWorkbook(metadataFilePath);
     spreadsheetUpdater.addMetadataTab(workbook, templateTitle, templateVersion, templateCreatedOn, templateID);
     spreadsheetUpdater.patchMetadata(workbook, metadataFilePath);
 
     var validator = validatorFactory.createValidator(new LiteralFieldValidators(new HashMap<>()));
-    var validationReports = validationSummary.getValidationResults();
     var spreadsheetValidatorResponse = validator.validateSpreadsheet(metadataFilePath.toString());
     var mapping = getRowToPhsMap(rows);
 
-    var invalidStudyRows = validationSummary.getInvalidMetadata();
     if(spreadsheetValidatorResponse != null){
       var reports = spreadsheetValidatorResponse.reports();
       reports.forEach(result-> {
@@ -68,11 +66,12 @@ public class StudyValidityEvaluator {
               result.repairSuggestion(),
               result.value()
           );
-          validationReports.add(spreadsheetResult);
-          invalidStudyRows.add(phs);
+          validationSummary.updateValidationResult(spreadsheetResult);
+          validationSummary.addInvalidMetadata(phs);
       });
     }
 
+    var invalidStudyRows = validationSummary.getInvalidMetadata();
     int totalStudies = rows.size();
     int invalidStudies = invalidStudyRows.size();
     var rate = (double) (totalStudies - invalidStudies) / totalStudies * 100;
@@ -82,7 +81,6 @@ public class StudyValidityEvaluator {
     if(invalidStudies > 0){
       consumer.accept(new EvaluationResult(VALIDITY, INVALID_STUDIES, invalidStudyRows));
     }
-    return validationReports;
   }
 
   private Workbook getWorkbook(Path metadataFilePath){

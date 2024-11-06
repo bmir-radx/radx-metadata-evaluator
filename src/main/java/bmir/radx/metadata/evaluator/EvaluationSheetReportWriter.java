@@ -5,14 +5,19 @@ import bmir.radx.metadata.evaluator.statistics.CompletenessStatistics;
 import bmir.radx.metadata.evaluator.statistics.IssueTypeStatistics;
 import bmir.radx.metadata.evaluator.statistics.RecordStatistics;
 import org.apache.poi.ss.usermodel.*;
+import org.rosuda.REngine.Rserve.RConnection;
+import org.rosuda.REngine.Rserve.RserveException;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 import static bmir.radx.metadata.evaluator.statistics.ChartDataFactory.*;
 import static bmir.radx.metadata.evaluator.statistics.StatisticsCalculator.*;
 import static bmir.radx.metadata.evaluator.util.ChartCreator.*;
+import static bmir.radx.metadata.evaluator.util.RChartCreator.*;
 import static bmir.radx.metadata.evaluator.util.StringParser.parseToMap;
 
 @Component
@@ -83,46 +88,64 @@ public class EvaluationSheetReportWriter {
     int rowIndex = 1; // Starting row index for data
     int currentRowForChart = 25; // Starting row for the first chart
 
-    //generate validity pie chart
-    var validityDistribution = getValidityDistribution(recordStatistics);
-    var validityPieChart = createPieChartImage(validityDistribution, "Records by Validity");
-    insertChartImageIntoSheet(sheet, validityPieChart, currentRowForChart, 0);
-    currentRowForChart += 25; // Move down for other charts
+    try {
+//      startRServe();
+      var rConnection = new RConnection();
+      Path rootPath = Paths.get(System.getProperty("user.dir"));
 
-    //generate issueType pie chart
-    var issueTypeDistribution = getIssueTypeDistribution(issueTypeStatistics);
-    var issueTypePieChart = createPieChartImage(issueTypeDistribution, "Records by Issue Type");
-    insertChartImageIntoSheet(sheet, issueTypePieChart, currentRowForChart, 0);
-    currentRowForChart += 25;
+      //generate validity pie chart
+      var chartName = sheetName + " Validity Chart.png";
+      var outputPath = rootPath.resolve(chartName);
+      var validityDistribution = getValidityDistribution(recordStatistics);
+      var validityPieChart = generateRingChart(rConnection, validityDistribution, outputPath.toString(), "Metadata Records");
+      insertChartImageIntoSheet(sheet, validityPieChart, currentRowForChart, 3);
+      currentRowForChart += 25; // Move down for other charts
 
-    //generate completion bar chart
-    var completion = getCompletenessDistribution(completenessStatistics);
-    var completionBarChart = createCompletionBarChart(completion, "Fields Completeness");
-    insertChartImageIntoSheet(sheet, completionBarChart, currentRowForChart, 0);
-    currentRowForChart += 25;
+      //generate issueType pie chart
+      chartName = sheetName + " Issue Type Chart.png";
+      outputPath = rootPath.resolve(chartName);
+      var issueTypeDistribution = getIssueTypeDistribution(issueTypeStatistics);
+      var issueTypePieChart = generateRingChart(rConnection, issueTypeDistribution, outputPath.toString(), "Issues");
+      insertChartImageIntoSheet(sheet, issueTypePieChart, currentRowForChart, 3);
+      currentRowForChart += 25;
 
-    for (EvaluationResult r : evaluationResults) {
-      Row row = sheet.createRow(rowIndex++);
-      String metric = r.getEvaluationMetric().getDisplayName();
-      row.createCell(0).setCellValue(r.getEvaluationCriteria().getCriterion());
-      row.createCell(1).setCellValue(metric);
-      row.createCell(2).setCellValue(r.getContentAsString());
+      //generate completion bar chart
+      chartName = sheetName + " Field Completeness Chart.png";
+      outputPath = rootPath.resolve(chartName);
+      var completion = getCompletenessDistribution(completenessStatistics);
+      var completionBarChart = generateStackedBarScatter(rConnection, outputPath.toString(), completion);
+      insertChartImageIntoSheet(sheet, completionBarChart, currentRowForChart, 3);
+      currentRowForChart += 25;
 
-      // Check if the evaluation type ends with "DISTRIBUTION"
-      if (metric.endsWith("Distribution")) {
-        // Extract values from the map format string
-        var distributionMap = parseToMap(r.getContentAsString());
+      for (EvaluationResult r : evaluationResults) {
+        Row row = sheet.createRow(rowIndex++);
+        String metric = r.getEvaluationMetric().getDisplayName();
+        row.createCell(0).setCellValue(r.getEvaluationCriteria().getCriterion());
+        row.createCell(1).setCellValue(metric);
+        row.createCell(2).setCellValue(r.getContentAsString());
 
-        // Create the chart using JFreeChart
-        var title = metric.replace("_", " ");
-        var chartImage = createDistributionChart(distributionMap, title, sheetName);
+        // Check if the evaluation type ends with "DISTRIBUTION"
+        if (metric.endsWith("Distribution")) {
+          // Extract values from the map format string
+          var distributionMap = parseToMap(r.getContentAsString());
 
-        // Insert the chart image into the sheet
-        insertChartImageIntoSheet(sheet, chartImage, currentRowForChart, 0);
+          // Create the chart using JFreeChart
+          var title = metric.replace("_", " ");
+          var chartImage = createDistributionChart(distributionMap, title, sheetName);
 
-        // Adjust the row position for the next chart
-        currentRowForChart += 25; // Move down 25 rows for the next chart
+          // Insert the chart image into the sheet
+          insertChartImageIntoSheet(sheet, chartImage, currentRowForChart, 3);
+
+          // Adjust the row position for the next chart
+          currentRowForChart += 25; // Move down 25 rows for the next chart
+        }
       }
+      // Close the connection to Rserve
+      rConnection.close();
+    } catch (RserveException e) {
+      throw new RuntimeException("Something wrong with r connection");
+    } catch (Exception e) {
+      throw new RuntimeException("Unable to generate chart");
     }
   }
 

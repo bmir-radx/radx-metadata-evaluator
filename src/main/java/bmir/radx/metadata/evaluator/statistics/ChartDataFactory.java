@@ -1,24 +1,47 @@
 package bmir.radx.metadata.evaluator.statistics;
 
-import bmir.radx.metadata.evaluator.util.FieldCategory;
-import bmir.radx.metadata.evaluator.util.IssueTypeMapping;
+import bmir.radx.metadata.evaluator.EvaluationMetric;
+import bmir.radx.metadata.evaluator.EvaluationReport;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static bmir.radx.metadata.evaluator.util.FieldCategory.*;
+import static bmir.radx.metadata.evaluator.statistics.StatisticsCalculator.*;
 
 public class ChartDataFactory {
-    public static Map<String, Integer> getValidityDistribution(RecordStatistics recordStatistics) {
+    public static Map<String, Integer> getDataForValidityChart(EvaluationReport<?> report) {
+        var recordStats = calculateRecordStats(report);
+        return getValidityDistribution(recordStats);
+    }
+
+    public static Map<String, Integer> getDataForIssueTypeChart(EvaluationReport<?> report){
+        var issueTypeStats = calculateIssueTypeStatistics(report);
+        return getIssueTypeDistribution(issueTypeStats);
+    }
+
+    public static int[][] getDataForCompletenessChart(EvaluationReport<?> report){
+        var completionStats = calculateCompletenessStatistics(report);
+        return getCompletenessDistribution(completionStats);
+    }
+
+    public static Map<String, Integer> getDataForControlledTermBarChart(EvaluationReport<?> report){
+        for(var result : report.evaluationResults()){
+            if (result.getEvaluationMetric().equals(EvaluationMetric.CONTROLLED_TERMS_DISTRIBUTION)){
+                return result.getContentAsMapStringInteger();
+            }
+        }
+        return null;
+    }
+
+    private static Map<String, Integer> getValidityDistribution(RecordStatistics recordStatistics) {
         Map<String, Integer> validityDistribution = new LinkedHashMap<>();
         validityDistribution.put("Invalid Records", recordStatistics.getInvalidRecords());
         validityDistribution.put("Valid Records", recordStatistics.getValidRecords());
         return validityDistribution;
     }
 
-    public static Map<String, Integer> getIssueTypeDistribution(List<IssueTypeStatistics> issueTypeStatistics){
+    private static Map<String, Integer> getIssueTypeDistribution(List<IssueTypeStatistics> issueTypeStatistics){
         Map<String, Integer> validityDistribution = new LinkedHashMap<>();
         for(var statistic : issueTypeStatistics){
             validityDistribution.put(statistic.getIssueType().getName(), statistic.getCount());
@@ -54,7 +77,7 @@ public class ChartDataFactory {
 //        return distribution;
 //    }
 
-    public static int[][] getCompletenessDistribution(CompletenessStatistics completenessStatistics) {
+    private static int[][] getCompletenessDistribution(CompletenessStatistics completenessStatistics) {
         int[] filled = new int[4];
         int[] unfilled = new int[4];
 

@@ -6,13 +6,12 @@ import org.rosuda.REngine.Rserve.RConnection;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.Paths;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 import static bmir.radx.metadata.evaluator.util.FieldCategory.getCategoryNames;
 
@@ -28,16 +27,31 @@ public class RChartCreator {
 //      connection.eval("if (!require('webr')) install.packages('webr', repos='http://cran.rstudio.com/')");
 //      connection.eval("library(webr)");
 
-      // Example usage
+      // Ring chart
       String outputPath = Paths.get(System.getProperty("user.dir"), "ring_chart.png").toString();
 //      generateRingChart(connection, Map.of("Invalid URL", 170, "Inconsistent", 50, "Unknown", 10), outputPath, "Issues");
 
-      int[][] data = {
-          {234, 43, 1520, 234}, // filled counts for each category
-          {123, 23, 4565, 2312}   // unfilled counts for each category
-      };
-      outputPath = Paths.get(System.getProperty("user.dir"), "stacked_chart.png").toString();
-      generateStackedBarScatter(connection, outputPath, data);
+      // Stacked bar chart
+//      int[][] data = {
+//          {234, 43, 1520, 234}, // filled counts for each category
+//          {123, 23, 4565, 2312}   // unfilled counts for each category
+//      };
+//      outputPath = Paths.get(System.getProperty("user.dir"), "stacked_chart.png").toString();
+//      generateStackedBarScatter(connection, outputPath, data);
+
+      // Bar chart
+//      outputPath = Paths.get(System.getProperty("user.dir"), "bar_charts.png").toString();
+//      Map<String, Integer> barData = new HashMap<>();
+//      barData.put("COVID", 272);
+//      barData.put("ROR", 272);
+//      barData.put("ORCID", 544);
+//      generateCTDistributionChart(connection, barData, outputPath);
+
+      outputPath = Paths.get(System.getProperty("user.dir"), "histogram.png").toString();
+      Map<Integer, Integer> histogramData = new HashMap<>();
+      histogramData.put(3, 12);
+      histogramData.put(8, 2);
+      generateHistogramChart(connection, histogramData, outputPath, "Required");
 
       // Close the connection to Rserve
       connection.close();
@@ -86,12 +100,12 @@ public class RChartCreator {
             "annotate('text', x = 0.5, y = 0, label = '" + centerLabel + "', size = 4, color = 'black', vjust = 1.5)";
     connection.eval(ringChartCommand);
 
-    String saveChartCommand = "ggsave('" + outputPath + "', plot = ring_chart, width = 6, height = 4)";
+    String saveChartCommand = String.format("ggsave('%s', plot = ring_chart, width = 6, height = 4)", outputPath);
     connection.eval(saveChartCommand);
     return getImage(outputPath);
   }
 
-  public static BufferedImage generateStackedBarScatter(RConnection connection, String outputPath, int[][] data) throws REngineException {
+  public static BufferedImage generateStackedBarScatter(RConnection connection, int[][] data, String outputPath) throws REngineException {
     int[] filled = data[0];
     int[] unfilled = data[1];
 
@@ -136,7 +150,7 @@ public class RChartCreator {
             "  geom_text(aes(x = categories, y = filled / 2 , label = filled), color = 'black', vjust = 0.5, fontface = 'bold') + " +
 
             // Scatter plot for percentage values (scale percentages to match Count scale for positioning)
-            "  geom_point(aes(x = categories, y = percentages * max(total) / 100, color = 'Percentage'), size = 3) + " +
+            "  geom_point(aes(x = categories, y = percentages * max(total) / 100, color = 'Filled Fields Percentage'), size = 3) + " +
 
             // Display the percentage value above each scatter point
             "  geom_text(aes(x = categories, y = percentages * max(total) / 100, label = paste0(round(percentages, 1), '%')), vjust = -0.5, color = 'blue') + " +
@@ -145,77 +159,120 @@ public class RChartCreator {
             "  labs(y = 'Count', x = 'Category') + " +
             "  theme_minimal() + " +
 
+            // Set the background to solid white
+            "  theme(panel.background = element_rect(fill = 'white', color = 'white'), " +
+            "        plot.background = element_rect(fill = 'white', color = 'white'), " +
+            "        legend.position = 'bottom', " +
+            "        legend.direction = 'horizontal', " +
+            "        legend.title = element_blank()) + " +
+
             // Adjust y-axis to allow better visibility of stacked bars
             "  scale_y_continuous(name = 'Count', limits = c(0, max(total) * 1.5), " +
             "                     sec.axis = sec_axis(~ . * (100 / max(total)), name = 'Percentage', labels = function(x) paste0(x, '%'))) + " +
-            "  scale_color_manual(values = c('Percentage' = 'blue')) + " +
-            "  theme(legend.position = 'bottom', legend.title = element_blank());";
+            "  scale_color_manual(values = c('Filled Fields Percentage' = 'blue'));";
     connection.eval(rScript);
 
-
-    System.out.println("Image generated at: " + outputPath);
-
-    String saveChartCommand = "ggsave('" + outputPath + "', plot = p, width = 6, height = 4)";
+    // Increase plot size to ensure the legend is visible
+    String saveChartCommand = String.format("ggsave('%s', plot = p, width = 8, height = 6)", outputPath);
     connection.eval(saveChartCommand);
 
     return getImage(outputPath);
   }
 
-  public static void startRServe() {
-    try {
-      // Check if RServe is already running by trying to connect
-      var rConnection = new org.rosuda.REngine.Rserve.RConnection();
-      System.out.println("RServe is already running.");
-      rConnection.close();
-    } catch (Exception e) {
-      System.out.println("RServe is not running. Attempting to start RServe...");
 
-      try {
-        // Determine command based on OS type
-        String command;
-        if (System.getProperty("os.name").toLowerCase().contains("win")) {
-          command = "R CMD Rscript -e \"if (!requireNamespace('Rserve', quietly = TRUE)) install.packages('Rserve'); library(Rserve); Rserve(args = '--no-save')\"";
-          new ProcessBuilder("cmd.exe", "/c", command).start();
-        } else {
-          command = "R CMD Rscript -e \"if (!requireNamespace('Rserve', quietly = TRUE)) install.packages('Rserve'); library(Rserve); Rserve(args = '--no-save')\"";
-          ProcessBuilder processBuilder = new ProcessBuilder("sh", "-c", command);
-          processBuilder.redirectErrorStream(true);
-          Process process = processBuilder.start();
+  public static BufferedImage generateCTDistributionChart(RConnection connection, Map<String, Integer> data, String outputPath) throws Exception {
+    connection.eval("if (!requireNamespace('ggplot2', quietly = TRUE)) install.packages('ggplot2', repos='http://cran.us.r-project.org')");
+    connection.eval("library(ggplot2)");
 
-          // Capture output to check for errors
-          BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-          String line;
-          while ((line = reader.readLine()) != null) {
-            System.out.println(line); // Print command output for debugging
-          }
-        }
+    // Prepare data for R
+    StringBuilder keys = new StringBuilder("c(");
+    StringBuilder values = new StringBuilder("c(");
 
-        // Retry loop: Wait for RServe to start, retrying up to 5 times
-        int maxRetries = 5;
-        int retryCount = 0;
-        boolean isConnected = false;
-        while (retryCount < maxRetries && !isConnected) {
-          try {
-            Thread.sleep(2000); // Wait 2 seconds before each retry
-            var rConnection = new org.rosuda.REngine.Rserve.RConnection();
-            System.out.println("RServe started successfully.");
-            rConnection.close();
-            isConnected = true; // Connection successful
-          } catch (Exception retryException) {
-            retryCount++;
-            System.out.println("Waiting for RServe to start... (Attempt " + retryCount + ")");
-          }
-        }
-
-        if (!isConnected) {
-          System.err.println("Failed to start RServe after multiple attempts.");
-        }
-
-      } catch (Exception ex) {
-        ex.printStackTrace();
-      }
+    for (Map.Entry<String, Integer> entry : data.entrySet()) {
+      keys.append("\"").append(entry.getKey()).append("\", ");
+      values.append(entry.getValue()).append(", ");
     }
+
+    // Remove trailing commas and close vectors
+    if (keys.length() > 2) {
+      keys.delete(keys.length() - 2, keys.length()).append(")");
+    } else {
+      keys.append(")");
+    }
+    if (values.length() > 2) {
+      values.delete(values.length() - 2, values.length()).append(")");
+    } else {
+      values.append(")");
+    }
+
+    // Assign data in R
+    connection.eval("keys <- " + keys.toString());
+    connection.eval("values <- " + values.toString());
+
+    // Use ggplot2 to create and save the chart as an image
+    String rScript =
+        "data <- data.frame(keys=keys, values=values); " +
+            "p <- ggplot(data, aes(x=keys, y=values)) + " +
+            "geom_bar(stat='identity', fill='blue') + " +
+            "geom_text(aes(label=values), vjust=-0.3, size=4) + " +
+            "theme_minimal() + " +
+            "theme(axis.text.x = element_text(angle = 60, hjust = 1, color='black')) + " +
+            "xlab('Controlled Terms') + ylab('Count');";
+    connection.eval(rScript);
+
+    String saveChartCommand = String.format("ggsave('%s', plot = p, width = 6, height = 4)", outputPath);
+    connection.eval(saveChartCommand);
+
+    // Save the generated image
+    return getImage(outputPath);
   }
+
+  public static BufferedImage generateHistogramChart(RConnection connection, Map<Integer, Integer> data, String outputPath, String fieldCategory) throws Exception {
+    connection.eval("if (!requireNamespace('ggplot2', quietly = TRUE)) install.packages('ggplot2', repos='http://cran.us.r-project.org')");
+    connection.eval("library(ggplot2)");
+
+    // Prepare data for R
+    int maxKey = data.keySet().stream().max(Integer::compare).orElse(0);
+    Map<Integer, Integer> completeDistribution = new HashMap<>();
+    IntStream.rangeClosed(0, maxKey).forEach(i -> completeDistribution.put(i, data.getOrDefault(i, 0)));
+
+    StringBuilder filledFields = new StringBuilder();
+    StringBuilder frequencies = new StringBuilder();
+
+    for (Map.Entry<Integer, Integer> entry : completeDistribution.entrySet()) {
+      filledFields.append(entry.getKey()).append(",");
+      frequencies.append(entry.getValue()).append(",");
+    }
+
+    // Remove trailing commas
+    if (filledFields.length() > 0) {
+      filledFields.setLength(filledFields.length() - 1);
+      frequencies.setLength(frequencies.length() - 1);
+    }
+
+    // Assign data to R variables
+    connection.eval("filledFields <- c(" + filledFields.toString() + ")");
+    connection.eval("frequencies <- c(" + frequencies.toString() + ")");
+
+    // Use ggplot2 to create and save the chart as an image
+    String rScript = String.format(
+        "data <- data.frame(FilledFields = filledFields, Frequency = frequencies);" +
+            "p <- ggplot(data, aes(x=factor(FilledFields), y=Frequency)) + " +
+                "geom_bar(stat='identity', fill='blue', color='black') + " +
+                "xlab('Filled Fields Number - %s') + ylab('Metadata Record') + " +
+                "geom_text(aes(label=Frequency), vjust=-0.5) + " +
+                "theme_minimal();", fieldCategory);
+
+    connection.eval(rScript);
+
+    String saveChartCommand = String.format("ggsave('%s', plot = p, width = 6, height = 4)", outputPath);
+    connection.eval(saveChartCommand);
+
+    // Save the generated image
+    return getImage(outputPath);
+  }
+
+
 
   private static BufferedImage getImage(String outputPath){
     BufferedImage bufferedImage = null;

@@ -1,46 +1,44 @@
 package bmir.radx.metadata.evaluator;
 
 import bmir.radx.metadata.evaluator.result.*;
-import bmir.radx.metadata.evaluator.statistics.CompletenessStatistics;
-import bmir.radx.metadata.evaluator.statistics.IssueTypeStatistics;
-import bmir.radx.metadata.evaluator.statistics.RecordStatistics;
 import org.apache.poi.ss.usermodel.*;
+import org.rosuda.REngine.REngineException;
 import org.rosuda.REngine.Rserve.RConnection;
 import org.rosuda.REngine.Rserve.RserveException;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 import static bmir.radx.metadata.evaluator.statistics.ChartDataFactory.*;
-import static bmir.radx.metadata.evaluator.statistics.StatisticsCalculator.*;
 import static bmir.radx.metadata.evaluator.util.ChartCreator.*;
 import static bmir.radx.metadata.evaluator.util.RChartCreator.*;
-import static bmir.radx.metadata.evaluator.util.StringParser.parseToMap;
 
 @Component
 public class EvaluationSheetReportWriter {
-  public void writeReports(Workbook workbook, Map<String, EvaluationReport<? extends ValidationResult>> reports) {
+  private int chartColumnNumber = 5;
+  private int chartRowNumber = 1;
+  private int contentRowNumber = 1;
+
+  public void writeReports(Workbook workbook, Map<String, EvaluationReport<? extends ValidationResult>> reports, Path out) {
     for (var entrySet : reports.entrySet()) {
       var entity = entrySet.getKey();
       var report = entrySet.getValue();
-      writeEvaluationReport(entity, report, workbook);
+      writeEvaluationReport(entity, report, workbook, out);
       writeIssuesPage(entity, report.validationResults(), workbook);
     }
   }
 
-  private void writeEvaluationReport(String entity, EvaluationReport<? extends ValidationResult> report, Workbook workbook){
+  private void writeEvaluationReport(String entity, EvaluationReport<? extends ValidationResult> report, Workbook workbook, Path out){
     var evaluationResults = report.evaluationResults();
     if(!evaluationResults.isEmpty()){
       var eSheetName = entity + " Evaluation Report";
       var eSheet = workbook.createSheet(eSheetName);
-      var recordStats = calculateRecordStats(report);
-      var issueTypeStats = calculateIssueTypeStatistics(report);
-      var completionStats = calculateCompletenessStatistics(report);
-      writeEvaluationReportHeader(eSheet);
-      writeEvaluationContent(evaluationResults, eSheet, eSheetName, recordStats, issueTypeStats, completionStats);
+
+//      writeEvaluationReportHeader(eSheet);
+      writeEvaluationContent(eSheet, eSheetName, report, out);
     }
   }
 
@@ -53,14 +51,15 @@ public class EvaluationSheetReportWriter {
     }
   }
 
-  private void writeEvaluationReportHeader(Sheet sheet) {
-    Row headerRow = sheet.createRow(0);
+  private void writeEvaluationReportContentHeader(Sheet sheet) {
+    Row headerRow = sheet.createRow(contentRowNumber);
     Cell headerCell0 = headerRow.createCell(0);
     headerCell0.setCellValue("Evaluation Criterion");
     Cell headerCell1 = headerRow.createCell(1);
     headerCell1.setCellValue("Metric");
     Cell headerCell2 = headerRow.createCell(2);
     headerCell2.setCellValue("Content");
+    contentRowNumber += 1;
   }
 
   private void writeIssuePageHeader(Sheet sheet, ValidationResult sampleResult) {
@@ -79,66 +78,38 @@ public class EvaluationSheetReportWriter {
     }
   }
 
-  private void writeEvaluationContent(List<EvaluationResult> evaluationResults,
-                                      Sheet sheet,
+  private void writeEvaluationContent(Sheet sheet,
                                       String sheetName,
-                                      RecordStatistics recordStatistics,
-                                      List<IssueTypeStatistics> issueTypeStatistics,
-                                      CompletenessStatistics completenessStatistics) {
+                                      EvaluationReport<? extends ValidationResult> report,
+                                      Path rootPath) {
     int rowIndex = 1; // Starting row index for data
-    int currentRowForChart = 25; // Starting row for the first chart
-
     try {
 //      startRServe();
       var rConnection = new RConnection();
-      Path rootPath = Paths.get(System.getProperty("user.dir"));
+      var chartPath = getChartPath(rootPath);
 
       //generate validity pie chart
-      var chartName = sheetName + " Validity Chart.png";
-      var outputPath = rootPath.resolve(chartName);
-      var validityDistribution = getValidityDistribution(recordStatistics);
-      var validityPieChart = generateRingChart(rConnection, validityDistribution, outputPath.toString(), "Metadata Records");
-      insertChartImageIntoSheet(sheet, validityPieChart, currentRowForChart, 3);
-      currentRowForChart += 25; // Move down for other charts
+      getAndInsertRingChart(sheetName, "Metadata Records", chartPath, sheet, rConnection, report);
 
       //generate issueType pie chart
-      chartName = sheetName + " Issue Type Chart.png";
-      outputPath = rootPath.resolve(chartName);
-      var issueTypeDistribution = getIssueTypeDistribution(issueTypeStatistics);
-      var issueTypePieChart = generateRingChart(rConnection, issueTypeDistribution, outputPath.toString(), "Issues");
-      insertChartImageIntoSheet(sheet, issueTypePieChart, currentRowForChart, 3);
-      currentRowForChart += 25;
+      getAndInsertRingChart(sheetName, "Issues", chartPath, sheet, rConnection, report);
 
       //generate completion bar chart
-      chartName = sheetName + " Field Completeness Chart.png";
-      outputPath = rootPath.resolve(chartName);
-      var completion = getCompletenessDistribution(completenessStatistics);
-      var completionBarChart = generateStackedBarScatter(rConnection, outputPath.toString(), completion);
-      insertChartImageIntoSheet(sheet, completionBarChart, currentRowForChart, 3);
-      currentRowForChart += 25;
+      getAndInsertStackedBarChart(sheetName, chartPath, sheet, rConnection, report);
 
-      for (EvaluationResult r : evaluationResults) {
+      //generate filled fields frequency charts
+      getAndInsertHistogramChart(sheetName, chartPath, sheet, rConnection, report.evaluationResults());
+
+      //generate controlled term bar chart
+      getAndInsertBarChart(sheetName, chartPath, sheet, rConnection, report);
+
+      for (EvaluationResult r : report.evaluationResults()) {
         Row row = sheet.createRow(rowIndex++);
         String metric = r.getEvaluationMetric().getDisplayName();
         row.createCell(0).setCellValue(r.getEvaluationCriteria().getCriterion());
         row.createCell(1).setCellValue(metric);
+        //todo rewrite get as string
         row.createCell(2).setCellValue(r.getContentAsString());
-
-        // Check if the evaluation type ends with "DISTRIBUTION"
-        if (metric.endsWith("Distribution")) {
-          // Extract values from the map format string
-          var distributionMap = parseToMap(r.getContentAsString());
-
-          // Create the chart using JFreeChart
-          var title = metric.replace("_", " ");
-          var chartImage = createDistributionChart(distributionMap, title, sheetName);
-
-          // Insert the chart image into the sheet
-          insertChartImageIntoSheet(sheet, chartImage, currentRowForChart, 3);
-
-          // Adjust the row position for the next chart
-          currentRowForChart += 25; // Move down 25 rows for the next chart
-        }
       }
       // Close the connection to Rserve
       rConnection.close();
@@ -167,6 +138,66 @@ public class EvaluationSheetReportWriter {
         row.createCell(2).setCellValue(jsonResult.issueType().name());
         row.createCell(3).setCellValue(jsonResult.errorMessage());
         row.createCell(4).setCellValue(jsonResult.suggestion());
+      }
+    }
+  }
+
+  private Path getChartPath(Path rootPath){
+    try {
+      Path chartsPath = rootPath.toRealPath().resolve("charts");
+      if (Files.notExists(chartsPath)) {
+        Files.createDirectories(chartsPath);
+      }
+      return chartsPath;
+    } catch (IOException e) {
+      throw new RuntimeException("Error creating charts directory at" + rootPath);
+    }
+  }
+
+  private void getAndInsertRingChart(String sheetName, String centerLabel, Path chartPath, Sheet sheet, RConnection rConnection, EvaluationReport<? extends ValidationResult> report) throws Exception {
+    var outputPath = chartPath.resolve(sheetName + " " + centerLabel + " Chart.png");
+    var validityDistribution = getDataForValidityChart(report);
+    var validityPieChart = generateRingChart(rConnection, validityDistribution, outputPath.toString(), centerLabel);
+    insertChartImageIntoSheet(sheet, validityPieChart, chartRowNumber, chartColumnNumber);
+    chartRowNumber += 25;
+  }
+
+  private void getAndInsertStackedBarChart(String sheetName, Path chartPath, Sheet sheet, RConnection rConnection, EvaluationReport<? extends ValidationResult> report) throws REngineException {
+    var chartName = sheetName + " Field Completeness Chart.png";
+    var outputPath = chartPath.resolve(chartName);
+    var completion = getDataForCompletenessChart(report);
+    var completionBarChart = generateStackedBarScatter(rConnection, completion, outputPath.toString());
+    insertChartImageIntoSheet(sheet, completionBarChart, chartRowNumber, chartColumnNumber);
+    chartRowNumber += 25;
+  }
+
+  private void getAndInsertBarChart(String sheetName, Path chartPath, Sheet sheet, RConnection rConnection, EvaluationReport<? extends ValidationResult> report) throws Exception {
+    var ctDistribution = getDataForControlledTermBarChart(report);
+    if(ctDistribution != null){
+      var chartName = sheetName + " Controlled Terms Distribution Chart.png";
+      var outputPath = chartPath.resolve(chartName);
+      var ctDistributionChart = generateCTDistributionChart(rConnection, ctDistribution, outputPath.toString());
+      insertChartImageIntoSheet(sheet, ctDistributionChart, chartRowNumber, chartColumnNumber);
+      chartRowNumber += 25;
+    }
+  }
+
+  private void getAndInsertHistogramChart(String sheetName, Path chartPath, Sheet sheet, RConnection rConnection, List<EvaluationResult> evaluationResults) throws Exception {
+    for(var result : evaluationResults){
+      var metric = result.getEvaluationMetric();
+      if(metric.equals(EvaluationMetric.REQUIRED_FIELDS_COMPLETENESS_DISTRIBUTION) ||
+          metric.equals(EvaluationMetric.RECOMMENDED_FIELDS_COMPLETENESS_DISTRIBUTION) ||
+          metric.equals(EvaluationMetric.OPTIONAL_FIELDS_COMPLETENESS_DISTRIBUTION) ||
+          metric.equals(EvaluationMetric.OVERALL_COMPLETENESS_DISTRIBUTION)){
+        var data = result.getContentAsMapIntegerInteger();
+
+        var chartFileName = sheetName + metric.getDisplayName().replace("Distribution", "") + ".png";
+        var chartFilePath = chartPath.resolve(chartFileName);
+        var fieldCategory = metric.getDisplayName().split(" ")[0];
+        var chart = generateHistogramChart(rConnection, data, chartFilePath.toString(), fieldCategory);
+
+        insertChartImageIntoSheet(sheet, chart, chartRowNumber, chartColumnNumber);
+        chartRowNumber += 25;
       }
     }
   }

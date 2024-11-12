@@ -109,7 +109,8 @@ public class EvaluateCommand implements Callable<Integer> {
     }
 
     var workbook = new XSSFWorkbook();
-    writer.writeReports(workbook, reports, out);
+    writer.setWorkbook(workbook);
+    writer.writeReports(reports, out);
 
     var outputStream = getOutputStream();
     workbook.write(outputStream);

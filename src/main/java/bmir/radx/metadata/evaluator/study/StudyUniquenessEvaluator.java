@@ -4,7 +4,6 @@ import bmir.radx.metadata.evaluator.EvaluationCriterion;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
 import bmir.radx.metadata.evaluator.result.ValidationSummary;
-import bmir.radx.metadata.evaluator.util.IssueTypeMapping;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -13,8 +12,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import static bmir.radx.metadata.evaluator.EvaluationMetric.DUPLICATE_STUDIES;
-import static bmir.radx.metadata.evaluator.EvaluationMetric.UNIQUENESS;
+import static bmir.radx.metadata.evaluator.EvaluationCriterion.UNIQUENESS;
+import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
 import static bmir.radx.metadata.evaluator.HeaderName.STUDY_PHS;
 import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.DUPLICATE_RECORD;
 
@@ -49,9 +48,10 @@ public class StudyUniquenessEvaluator {
     int totalStudies = rows.size();
     int uniqueStudies = uniquePHS.size();
     var rate = (double) uniqueStudies / totalStudies * 100;
-    consumer.accept(new EvaluationResult(EvaluationCriterion.UNIQUENESS, UNIQUENESS, rate));
+    consumer.accept(new EvaluationResult(UNIQUENESS, UNIQUENESS_RATE, rate));
+    consumer.accept(new EvaluationResult(UNIQUENESS, NUMBER_OF_DUPLICATE_RECORDS, duplicatePHS.size()));
     if(!duplicatePHS.isEmpty()){
-      consumer.accept(new EvaluationResult(EvaluationCriterion.UNIQUENESS, DUPLICATE_STUDIES, duplicatePHS));
+      consumer.accept(new EvaluationResult(UNIQUENESS, DUPLICATE_RECORDS, duplicatePHS));
     }
   }
 }

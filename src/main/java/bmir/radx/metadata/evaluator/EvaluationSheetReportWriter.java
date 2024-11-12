@@ -12,26 +12,39 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
+import static bmir.radx.metadata.evaluator.result.DataFactory.getBasicInfoData;
+import static bmir.radx.metadata.evaluator.result.DataFactory.getCriterionData;
 import static bmir.radx.metadata.evaluator.statistics.ChartDataFactory.*;
-import static bmir.radx.metadata.evaluator.util.ChartCreator.*;
-import static bmir.radx.metadata.evaluator.util.RChartCreator.*;
+import static bmir.radx.metadata.evaluator.RChartCreator.*;
 
 @Component
 public class EvaluationSheetReportWriter {
-  private int chartColumnNumber = 5;
-  private int chartRowNumber = 1;
-  private int contentRowNumber = 1;
+  private int currentChartColumnNumber;
+  private int currentChartRowNumber;
+  private int currentContentRowNumber;
+  private final int startChartColumnNumber = 0;
+  private final int startChartRowNumber = 20;
+  private final int startContentRowNumber = 0;
+  private final String issues = "Issues";
+  private final String metadataRecords = "Metadata Records";
+  private Workbook workbook;
 
-  public void writeReports(Workbook workbook, Map<String, EvaluationReport<? extends ValidationResult>> reports, Path out) {
+  public void writeReports(Map<String, EvaluationReport<? extends ValidationResult>> reports, Path out) {
     for (var entrySet : reports.entrySet()) {
+      locateWritingPosition();
       var entity = entrySet.getKey();
       var report = entrySet.getValue();
-      writeEvaluationReport(entity, report, workbook, out);
-      writeIssuesPage(entity, report.validationResults(), workbook);
+      writeEvaluationReport(entity, report, out);
+      writeIssuesPage(entity, report.validationResults());
     }
   }
 
-  private void writeEvaluationReport(String entity, EvaluationReport<? extends ValidationResult> report, Workbook workbook, Path out){
+  private void locateWritingPosition(){
+    currentChartRowNumber = startChartRowNumber;
+    currentChartColumnNumber = startChartColumnNumber;
+    currentContentRowNumber = startContentRowNumber;
+  }
+  private void writeEvaluationReport(String entity, EvaluationReport<? extends ValidationResult> report, Path out){
     var evaluationResults = report.evaluationResults();
     if(!evaluationResults.isEmpty()){
       var eSheetName = entity + " Evaluation Report";
@@ -42,7 +55,7 @@ public class EvaluationSheetReportWriter {
     }
   }
 
-  private <T extends ValidationResult> void writeIssuesPage(String entity, List<T> validationResults, Workbook workbook){
+  private <T extends ValidationResult> void writeIssuesPage(String entity, List<T> validationResults){
     if(!validationResults.isEmpty()){
       var vSheetName = entity + " Validation Report";
       var vSheet = workbook.createSheet(vSheetName);
@@ -51,15 +64,14 @@ public class EvaluationSheetReportWriter {
     }
   }
 
-  private void writeEvaluationReportContentHeader(Sheet sheet) {
-    Row headerRow = sheet.createRow(contentRowNumber);
-    Cell headerCell0 = headerRow.createCell(0);
-    headerCell0.setCellValue("Evaluation Criterion");
-    Cell headerCell1 = headerRow.createCell(1);
-    headerCell1.setCellValue("Metric");
-    Cell headerCell2 = headerRow.createCell(2);
-    headerCell2.setCellValue("Content");
-    contentRowNumber += 1;
+  private void writeEvaluationReportContentHeader(Sheet sheet, List<String> headers, CellStyle headerStyle) {
+    Row row = sheet.createRow(currentContentRowNumber);
+    for (int i = 0; i < headers.size(); i++) {
+      Cell cell = row.createCell(i);
+      cell.setCellValue(headers.get(i));
+      cell.setCellStyle(headerStyle);
+    }
+    currentContentRowNumber += 1;
   }
 
   private void writeIssuePageHeader(Sheet sheet, ValidationResult sampleResult) {
@@ -82,42 +94,58 @@ public class EvaluationSheetReportWriter {
                                       String sheetName,
                                       EvaluationReport<? extends ValidationResult> report,
                                       Path rootPath) {
-    int rowIndex = 1; // Starting row index for data
-    try {
-//      startRServe();
-      var rConnection = new RConnection();
-      var chartPath = getChartPath(rootPath);
+    //write the Basic Info headers
+    var headerStyle = getHeaderStyle();
+    var boldStyle = getBoldStyle();
+    List<String> basicInfoHeader = Arrays.asList("Basic Info", "Value");
+    writeEvaluationReportContentHeader(sheet, basicInfoHeader, headerStyle);
 
-      //generate validity pie chart
-      getAndInsertRingChart(sheetName, "Metadata Records", chartPath, sheet, rConnection, report);
+    //write Basic Info data
+    var basicInfoData = getBasicInfoData(report.evaluationResults());
+    for (var info : basicInfoData) {
+      Row row = sheet.createRow(currentContentRowNumber);
+      Cell cell = row.createCell(0);
+      cell.setCellValue(info.metric().getDisplayName());
+      cell.setCellStyle(boldStyle);
 
-      //generate issueType pie chart
-      getAndInsertRingChart(sheetName, "Issues", chartPath, sheet, rConnection, report);
+      row.createCell(1).setCellValue(info.value().toString());
 
-      //generate completion bar chart
-      getAndInsertStackedBarChart(sheetName, chartPath, sheet, rConnection, report);
-
-      //generate filled fields frequency charts
-      getAndInsertHistogramChart(sheetName, chartPath, sheet, rConnection, report.evaluationResults());
-
-      //generate controlled term bar chart
-      getAndInsertBarChart(sheetName, chartPath, sheet, rConnection, report);
-
-      for (EvaluationResult r : report.evaluationResults()) {
-        Row row = sheet.createRow(rowIndex++);
-        String metric = r.getEvaluationMetric().getDisplayName();
-        row.createCell(0).setCellValue(r.getEvaluationCriteria().getCriterion());
-        row.createCell(1).setCellValue(metric);
-        //todo rewrite get as string
-        row.createCell(2).setCellValue(r.getContentAsString());
-      }
-      // Close the connection to Rserve
-      rConnection.close();
-    } catch (RserveException e) {
-      throw new RuntimeException("Something wrong with r connection");
-    } catch (Exception e) {
-      throw new RuntimeException("Unable to generate chart");
+      currentContentRowNumber++;
     }
+
+    //a blank separate row
+    currentContentRowNumber++;
+
+    //write the Criteria headers
+    List<String> criteriaHeaders = Arrays.asList("Criteria", "Pass Rate", "Failed Records Count", "Failed Metadata Records");
+    writeEvaluationReportContentHeader(sheet, criteriaHeaders, headerStyle);
+
+    //write the criteria data
+    var criteriaData = getCriterionData(report.evaluationResults());
+    for (var data : criteriaData) {
+      Row row = sheet.createRow(currentContentRowNumber);
+      Cell cell = row.createCell(0);
+      cell.setCellValue(data.getCriterion().getCriterion());
+      cell.setCellStyle(boldStyle);
+
+      if(data.getPassRate() != null){
+        row.createCell(1).setCellValue(data.getPassRate().toString() + "%");
+      }
+      if(data.getFailedStudyCount() != null){
+        row.createCell(2).setCellValue(data.getFailedStudyCount().toString());
+      }
+      row.createCell(3).setCellValue(data.getFailedStudies());
+
+      currentContentRowNumber++;
+    }
+
+    // Auto-size columns for a neat appearance
+    for (int i = 0; i < criteriaHeaders.size(); i++) {
+      sheet.autoSizeColumn(i);
+    }
+
+    //add charts
+    getAndInsertCharts(sheet, sheetName, report, rootPath);
   }
 
   private <T extends ValidationResult> void writeIssuePageContent(List<T> validationResults, Sheet sheet) {
@@ -142,6 +170,32 @@ public class EvaluationSheetReportWriter {
     }
   }
 
+  private void getAndInsertCharts(Sheet sheet,
+                                  String sheetName,
+                                  EvaluationReport<? extends ValidationResult> report,
+                                  Path rootPath){
+    try {
+      var rConnection = new RConnection();
+      var chartPath = getChartPath(rootPath);
+
+      //generate validity pie chart
+      getAndInsertRingChart(sheetName, metadataRecords, chartPath, sheet, rConnection, report);
+      //generate issueType pie chart
+      getAndInsertRingChart(sheetName, issues, chartPath, sheet, rConnection, report);
+      //generate completion bar chart
+      getAndInsertStackedBarChart(sheetName, chartPath, sheet, rConnection, report);
+      //generate filled fields frequency charts
+      getAndInsertHistogramChart(sheetName, chartPath, sheet, rConnection, report.evaluationResults());
+      //generate controlled term bar chart
+      getAndInsertBarChart(sheetName, chartPath, sheet, rConnection, report);
+      rConnection.close();
+    } catch (RserveException e) {
+      throw new RuntimeException("Something wrong with r connection");
+    } catch (Exception e) {
+      throw new RuntimeException("Unable to generate chart");
+    }
+  }
+
   private Path getChartPath(Path rootPath){
     try {
       Path chartsPath = rootPath.toRealPath().resolve("charts");
@@ -156,10 +210,16 @@ public class EvaluationSheetReportWriter {
 
   private void getAndInsertRingChart(String sheetName, String centerLabel, Path chartPath, Sheet sheet, RConnection rConnection, EvaluationReport<? extends ValidationResult> report) throws Exception {
     var outputPath = chartPath.resolve(sheetName + " " + centerLabel + " Chart.png");
-    var validityDistribution = getDataForValidityChart(report);
-    var validityPieChart = generateRingChart(rConnection, validityDistribution, outputPath.toString(), centerLabel);
-    insertChartImageIntoSheet(sheet, validityPieChart, chartRowNumber, chartColumnNumber);
-    chartRowNumber += 25;
+    Map<String, Integer> data = null;
+    if(centerLabel.equals(metadataRecords)){
+      data = getDataForValidityChart(report);
+    } else{
+      data = getDataForIssueTypeChart(report);
+    }
+
+    var pieChart = generateRingChart(rConnection, data, outputPath.toString(), centerLabel);
+    insertChartImageIntoSheet(sheet, pieChart, currentChartRowNumber, currentChartColumnNumber);
+    currentChartRowNumber += 25;
   }
 
   private void getAndInsertStackedBarChart(String sheetName, Path chartPath, Sheet sheet, RConnection rConnection, EvaluationReport<? extends ValidationResult> report) throws REngineException {
@@ -167,8 +227,8 @@ public class EvaluationSheetReportWriter {
     var outputPath = chartPath.resolve(chartName);
     var completion = getDataForCompletenessChart(report);
     var completionBarChart = generateStackedBarScatter(rConnection, completion, outputPath.toString());
-    insertChartImageIntoSheet(sheet, completionBarChart, chartRowNumber, chartColumnNumber);
-    chartRowNumber += 25;
+    insertChartImageIntoSheet(sheet, completionBarChart, currentChartRowNumber, currentChartColumnNumber);
+    currentChartRowNumber += 25;
   }
 
   private void getAndInsertBarChart(String sheetName, Path chartPath, Sheet sheet, RConnection rConnection, EvaluationReport<? extends ValidationResult> report) throws Exception {
@@ -177,8 +237,8 @@ public class EvaluationSheetReportWriter {
       var chartName = sheetName + " Controlled Terms Distribution Chart.png";
       var outputPath = chartPath.resolve(chartName);
       var ctDistributionChart = generateCTDistributionChart(rConnection, ctDistribution, outputPath.toString());
-      insertChartImageIntoSheet(sheet, ctDistributionChart, chartRowNumber, chartColumnNumber);
-      chartRowNumber += 25;
+      insertChartImageIntoSheet(sheet, ctDistributionChart, currentChartRowNumber, currentChartColumnNumber);
+      currentChartRowNumber += 25;
     }
   }
 
@@ -196,9 +256,31 @@ public class EvaluationSheetReportWriter {
         var fieldCategory = metric.getDisplayName().split(" ")[0];
         var chart = generateHistogramChart(rConnection, data, chartFilePath.toString(), fieldCategory);
 
-        insertChartImageIntoSheet(sheet, chart, chartRowNumber, chartColumnNumber);
-        chartRowNumber += 25;
+        insertChartImageIntoSheet(sheet, chart, currentChartRowNumber, currentChartColumnNumber);
+        currentChartRowNumber += 25;
       }
     }
+  }
+
+  private CellStyle getHeaderStyle(){
+    var headerStyle = workbook.createCellStyle();
+    var headerFont = workbook.createFont();
+    headerFont.setBold(true);
+    headerStyle.setFont(headerFont);
+    headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+    headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+    return headerStyle;
+  }
+
+  private CellStyle getBoldStyle(){
+    var boldStyle = workbook.createCellStyle();
+    var boldFont = workbook.createFont();
+    boldFont.setBold(true);
+    boldStyle.setFont(boldFont);
+    return boldStyle;
+  }
+
+  public void setWorkbook(Workbook workbook) {
+    this.workbook = workbook;
   }
 }

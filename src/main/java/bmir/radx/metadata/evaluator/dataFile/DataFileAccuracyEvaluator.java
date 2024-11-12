@@ -47,6 +47,7 @@ public class DataFileAccuracyEvaluator {
         int inaccurateDataFiles = inaccurateInstances.size();
         var rate = (double) (totalDataFiles - inaccurateDataFiles) / totalDataFiles * 100;
         consumer.accept(new EvaluationResult(ACCURACY, ACCURACY_RATE, rate));
+        consumer.accept(new EvaluationResult(ACCURACY, NUMBER_OF_INACCURATE_RECORDS, inaccurateDataFiles));
         consumer.accept(new EvaluationResult(ACCURACY, INACCURATE_DATA_FILES, inaccurateInstances));
     }
 

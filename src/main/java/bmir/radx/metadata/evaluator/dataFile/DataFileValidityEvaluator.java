@@ -67,9 +67,8 @@ public class DataFileValidityEvaluator {
 
     consumer.accept(new EvaluationResult(VALIDITY, VALIDATION_PASS_RATE, rate));
     consumer.accept(new EvaluationResult(VALIDITY, NUMBER_OF_INVALID_RECORDS, invalidDataFiles));
-    if(invalidDataFiles > 0){
-      consumer.accept(new EvaluationResult(VALIDITY, INVALID_DATA_FILE_METADATA, invalidInstances));
-    }
+    consumer.accept(new EvaluationResult(VALIDITY, INVALID_DATA_FILE_METADATA, invalidInstances));
+
   }
 
   public boolean isValid(String fileName, String templateString, String instanceString, List<JsonValidationResult> results) {

@@ -7,7 +7,9 @@ import bmir.radx.metadata.evaluator.util.IssueTypeMapping;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.ACCURACY;
@@ -39,8 +41,8 @@ public class StudyAccuracyEvaluator {
     }
   }
 
-  private List<String> getIncorrectCtLinks(){
-    List<String> studies = new ArrayList<>();
+  private Set<String> getIncorrectCtLinks(){
+    Set<String> studies = new HashSet<>();
     studies.add("phs002521");
     studies.add("phs002584");
     studies.add("phs002713");

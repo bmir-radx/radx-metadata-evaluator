@@ -1,11 +1,13 @@
-package bmir.radx.metadata.evaluator.util;
+package bmir.radx.metadata.evaluator;
 
+import org.apache.poi.ss.usermodel.*;
 import org.rosuda.REngine.REngineException;
 import org.rosuda.REngine.Rserve.RConnection;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -272,6 +274,36 @@ public class RChartCreator {
     return getImage(outputPath);
   }
 
+  public static void insertChartImageIntoSheet(Sheet sheet, BufferedImage chartImage, int rowNumber, int columnNumber) {
+    try {
+      // Convert BufferedImage to byte array
+      var chartOut = new ByteArrayOutputStream();
+      javax.imageio.ImageIO.write(chartImage, "png", chartOut);
+      chartOut.close();
+      byte[] imageBytes = chartOut.toByteArray();
+
+      // Add picture to workbook
+      int pictureIdx = sheet.getWorkbook().addPicture(imageBytes, Workbook.PICTURE_TYPE_PNG);
+
+      // Create drawing patriarch
+      Drawing<?> drawing = sheet.createDrawingPatriarch();
+
+      // Create anchor
+      ClientAnchor anchor = sheet.getWorkbook().getCreationHelper().createClientAnchor();
+      anchor.setCol1(columnNumber);
+      anchor.setRow1(rowNumber);
+      anchor.setCol2(columnNumber + 10);
+      anchor.setRow2(rowNumber + 20);
+
+      // Create picture
+      Picture pict = drawing.createPicture(anchor, pictureIdx);
+
+      // Resize picture to fit the anchor
+      pict.resize();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
 
 
   private static BufferedImage getImage(String outputPath){

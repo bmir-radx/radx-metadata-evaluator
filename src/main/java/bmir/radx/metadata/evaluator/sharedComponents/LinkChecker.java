@@ -6,6 +6,8 @@ import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
 import bmir.radx.metadata.evaluator.study.StudyMetadataRow;
 import bmir.radx.metadata.evaluator.util.IssueTypeMapping;
 import bmir.radx.metadata.evaluator.util.URLCount;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import edu.stanford.bmir.radx.metadata.validator.lib.FieldValues;
 import edu.stanford.bmir.radx.metadata.validator.lib.TemplateInstanceValuesReporter;
 import edu.stanford.bmir.radx.metadata.validator.lib.ValidationName;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.*;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static bmir.radx.metadata.evaluator.study.FieldNameStandardizer.getStandardizedMap;
 import static bmir.radx.metadata.evaluator.study.FieldNameStandardizer.standardizeFieldName;
@@ -24,10 +27,19 @@ import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.INVAL
 
 @Component
 public class LinkChecker {
+  private static final int CONNECTION_TIMEOUT = 8000; // 8 seconds
+  private static final int READ_TIMEOUT = 5000;       // 5 seconds
+  private static final int MAX_RETRIES = 10;          // Max retries for 429
+  private static final int BASE_BACKOFF = 500;        // Initial backoff time
+  private final Cache<String, Boolean> urlStatusCache; // URL cache
   private final FieldsCollector fieldsCollector;
 
   public LinkChecker(FieldsCollector fieldsCollector) {
     this.fieldsCollector = fieldsCollector;
+    this.urlStatusCache = CacheBuilder.newBuilder()
+        .maximumSize(1000)
+        .expireAfterWrite(30, TimeUnit.MINUTES)
+        .build();
   }
 
   public URLCount checkJson(String fileName,
@@ -46,8 +58,6 @@ public class LinkChecker {
         if(uri.isPresent()){
           var uriString = uri.get().toString();
           updateUnresolvableUrlResult(uriString, fileName, path, urlCount, validationResults);
-        } else{
-            urlCount.incrementUnresolvableURL();
         }
       }
     }
@@ -58,11 +68,7 @@ public class LinkChecker {
       var path = avArtifact.specificationPath();
       if(value.isPresent() && isValidURL(value.get())){
         urlCount.incrementTotalURL();
-        if(isUrlResolvable(value.get())){
-          updateUnresolvableUrlResult(value.get(), fileName, path, urlCount, validationResults);
-        } else{
-          urlCount.incrementUnresolvableURL();
-        }
+        updateUnresolvableUrlResult(value.get(), fileName, path, urlCount, validationResults);
       }
     }
 
@@ -117,41 +123,97 @@ public class LinkChecker {
       }
 
       urlCount.incrementTotalURL();
-      boolean hostResolvable = isHostResolvable(url);
-      boolean urlResolvable = hostResolvable && isUrlResolvable(url);
+      boolean resolvable;
 
-      if (!hostResolvable || !urlResolvable) {
+      //Use the cache to speed up the URL checking
+      var statusMap = urlStatusCache.asMap();
+      if(statusMap.containsKey(url)){
+        resolvable = statusMap.get(url);
+      } else{
+        resolvable = isResolvable(url);
+        urlStatusCache.put(url, resolvable);
+      }
+
+      if (!resolvable) {
         urlCount.incrementUnresolvableURL();
-        var result = new SpreadsheetValidationResult(INVALID_URL, fieldName, rowNumber, phs, null, url);
-        validationResults.add(result);
+        //Don't add this validation result because spreadsheet validator already handle this type of validation
+//        var result = new SpreadsheetValidationResult(INVALID_URL, fieldName, rowNumber, phs, null, url);
+//        validationResults.add(result);
       } else {
         urlCount.incrementResolvableURL();
       }
     }
   }
-  private boolean isUrlResolvable(String urlString){
-    try {
+
+  public boolean isResolvable(String urlString) {
+    try{
       var url = new URL(urlString);
-      var connection = (HttpURLConnection) url.openConnection();
-      connection.setRequestMethod("GET");
-      connection.setConnectTimeout(5000);
-      connection.setReadTimeout(5000);
-      connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3");
-      int responseCode = connection.getResponseCode();
-      return (200 <= responseCode && responseCode <= 399);
-    } catch (IOException e) {
+      // Try resolving with HEAD first
+      return checkUrl(url, "HEAD") || checkUrl(url, "GET");
+    } catch (MalformedURLException e) {
       return false;
     }
   }
 
-  private boolean isHostResolvable(String urlString){
-    try {
-      var url = new URL(urlString);
-      InetAddress.getAllByName(url.getHost());
-      return true;
-    } catch (MalformedURLException | UnknownHostException e) {
-      return false;
+  private boolean checkUrl(URL url, String method) {
+    var attempt = 0;
+    while (attempt <= MAX_RETRIES) {
+      int responseCode = -1;
+      try {
+        var conn = setupConnection(url, method);
+        responseCode = conn.getResponseCode();
+
+        // If redirect (3xx), follow the new location
+        if (isRedirect(responseCode)) {
+          return handleRedirect(url, conn);
+        }
+        // Handle 429 Too Many Requests with exponential backoff
+        if (isTooManyRequests(responseCode)) {
+          applyBackoff(attempt);
+          attempt++;
+          continue;
+        }
+        // Return true for successful response (2xx)
+        return (responseCode >= 200 && responseCode < 300);
+      } catch (IOException | InterruptedException e) {
+        return false;
+      }
     }
+    // If all attempts fail, assume it's possibly resolvable
+    System.out.println("WARN  All attempts failed; assuming " + url + " might still be resolvable.");
+    return true;
+  }
+
+  private HttpURLConnection setupConnection(URL url, String method) throws IOException {
+    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+    conn.setRequestMethod(method);
+    conn.setConnectTimeout(CONNECTION_TIMEOUT);
+    conn.setReadTimeout(READ_TIMEOUT);
+    conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36");
+    conn.connect();
+    return conn;
+  }
+
+  private boolean isRedirect(int responseCode) {
+    return responseCode >= 300 && responseCode < 400;
+  }
+
+  private boolean handleRedirect(URL url, HttpURLConnection conn) throws IOException {
+    String newLocation = conn.getHeaderField("Location");
+    if (newLocation != null) {
+      URL redirectUrl = new URL(url, newLocation);
+      return isResolvable(redirectUrl.toString());
+    }
+    return false;
+  }
+
+  private boolean isTooManyRequests(int responseCode) {
+    return responseCode == 429;
+  }
+
+  private void applyBackoff(int attempt) throws InterruptedException {
+    int backoff = BASE_BACKOFF * attempt;
+    TimeUnit.MILLISECONDS.sleep(backoff);
   }
 
   private boolean isValidURL(String urlString){
@@ -164,8 +226,8 @@ public class LinkChecker {
   }
 
   private void updateUnresolvableUrlResult(String uriString, String fileName, String path, URLCount urlCount, List<JsonValidationResult> validationResults) {
-    if (isUrlResolvable(uriString)) {
-      urlCount.incrementResolvableURL();
+    if (!isResolvable(uriString)) {
+      urlCount.incrementUnresolvableURL();
       validationResults.add(
           new JsonValidationResult(
               fileName,
@@ -174,6 +236,8 @@ public class LinkChecker {
               "Invalid URL",
               null)
       );
+    } else{
+      urlCount.incrementResolvableURL();
     }
   }
 }

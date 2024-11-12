@@ -7,9 +7,7 @@ import bmir.radx.metadata.evaluator.sharedComponents.LinkChecker;
 import bmir.radx.metadata.evaluator.util.TemplateGetter;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 
 import static bmir.radx.metadata.evaluator.sharedComponents.DistributionManager.updateDistribution;
@@ -30,6 +28,7 @@ public class StudyAccessibilityEvaluator {
     var validationResults = validationSummary.getValidationResults();
 
     Map<Integer, Integer> distributionMap = new HashMap<>();
+    Set<String> inaccessibleRecords = new HashSet<>();
     int totalURL = 0;
     int totalResolvableURL = 0;
     for(var row: rows){
@@ -42,9 +41,10 @@ public class StudyAccessibilityEvaluator {
       //update invalid studies
       if(urlCount.getUnresolvableURL() > 0){
         validationSummary.addInvalidMetadata(row.studyPHS());
+        inaccessibleRecords.add(row.studyPHS());
       }
     }
 
-    updateAccessibilityResult(totalURL, totalResolvableURL, consumer, distributionMap);
+    updateAccessibilityResult(totalURL, totalResolvableURL, consumer, distributionMap, inaccessibleRecords);
   }
 }

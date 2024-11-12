@@ -9,8 +9,7 @@ import org.metadatacenter.artifacts.model.core.TemplateInstanceArtifact;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 
 import static bmir.radx.metadata.evaluator.sharedComponents.DistributionManager.updateDistribution;
@@ -31,6 +30,7 @@ public class DataFileAccessibilityEvaluator {
     var totalUrl = 0;
     var resolvableURL = 0;
     var templateReporter = reporterGetter.getTemplateReporter();
+    var inaccessibleRecords = new HashSet<String>();
     for(var instance : templateInstanceArtifacts.entrySet()){
       var fileName = instance.getKey().getFileName().toString();
       var instanceReporter = reporterGetter.getTemplateInstanceValuesReporter(instance.getValue());
@@ -42,9 +42,10 @@ public class DataFileAccessibilityEvaluator {
       //update invalid metadata
       if (urlCount.getUnresolvableURL() > 0){
         validationSummary.addInvalidMetadata(fileName);
+        inaccessibleRecords.add(fileName);
       }
     }
 
-    updateAccessibilityResult(totalUrl, resolvableURL, consumer, totalUrlDistribution);
+    updateAccessibilityResult(totalUrl, resolvableURL, consumer, totalUrlDistribution, inaccessibleRecords);
   }
 }

@@ -59,7 +59,7 @@ public class StudyEvaluator implements Evaluator<SpreadsheetValidationResult> {
       logger.info("Start to check clinicalTrials link of study metadata spreadsheet");
       accuracyEvaluator.evaluate(studyMetadataRows, consumer, validationSummary);
       logger.info("Start to check consistency of study metadata spreadsheet");
-      consistencyEvaluator.evaluate(studyMetadataRows, consumer, validationSummary);
+//      consistencyEvaluator.evaluate(studyMetadataRows, consumer, validationSummary);
       logger.info("Start to check uniqueness of study metadata spreadsheet");
       uniquenessEvaluator.evaluate(studyMetadataRows, consumer, validationSummary);
       logger.info("Start to check validity of study metadata spreadsheet");

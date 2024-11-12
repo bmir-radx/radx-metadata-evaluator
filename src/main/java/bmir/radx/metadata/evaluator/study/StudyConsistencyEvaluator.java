@@ -36,7 +36,7 @@ public class StudyConsistencyEvaluator {
     int inconsistentStudies = inconsistentMultiSitesRows.size();
     var rate = (double) (totalStudies - inconsistentStudies) / totalStudies * 100;
     consumer.accept(new EvaluationResult(CONSISTENCY, CONSISTENT_STUDY_RATE, rate));
-    consumer.accept(new EvaluationResult(CONSISTENCY, NUMBER_OF_INCONSISTENT_STUDIES, inconsistentStudies));
+    consumer.accept(new EvaluationResult(CONSISTENCY, NUMBER_OF_INCONSISTENT_RECORDS, inconsistentStudies));
     if(inconsistentStudies > 0){
       consumer.accept(new EvaluationResult(CONSISTENCY, INCONSISTENT_STUDIES, inconsistentMultiSitesRows));
     }

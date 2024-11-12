@@ -3,10 +3,7 @@ package bmir.radx.metadata.evaluator.result;
 import bmir.radx.metadata.evaluator.EvaluationCriterion;
 import bmir.radx.metadata.evaluator.EvaluationMetric;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class EvaluationResult implements Result{
   private final EvaluationCriterion evaluationCriterion;
@@ -62,6 +59,11 @@ public class EvaluationResult implements Result{
   public String getContentAsString() {
     if (content instanceof Double) {
       return String.format("%.2f", (Double) content);
+    } else if (content instanceof Set<?>) {
+      Set<?> contentSet = (Set<?>) content;
+      if (!contentSet.isEmpty() && contentSet.iterator().next() instanceof String) {
+        return String.join(", ", (Set<String>) content);
+      }
     }
     return content != null ? content.toString() : null;
   }

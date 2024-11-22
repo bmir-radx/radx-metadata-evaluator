@@ -40,7 +40,8 @@ public class StudyEvaluator implements Evaluator<SpreadsheetValidationResult> {
     this.uniquenessEvaluator = uniquenessEvaluator;
   }
 
-  public EvaluationReport<SpreadsheetValidationResult> evaluate(Path metadataFilePath) {
+  public EvaluationReport<SpreadsheetValidationResult> evaluate(Path... filePaths) {
+    Path metadataFilePath = filePaths[0];
     var evaluationResults = new ArrayList<EvaluationResult>();
     Consumer<EvaluationResult> consumer = evaluationResults::add;
 
@@ -56,12 +57,16 @@ public class StudyEvaluator implements Evaluator<SpreadsheetValidationResult> {
 
       logger.info("Start to check links resolvability of study metadata spreadsheet");
       studyAccessibilityEvaluator.evaluate(studyMetadataRows, consumer, validationSummary);
+
       logger.info("Start to check clinicalTrials link of study metadata spreadsheet");
       accuracyEvaluator.evaluate(studyMetadataRows, consumer, validationSummary);
+
       logger.info("Start to check consistency of study metadata spreadsheet");
 //      consistencyEvaluator.evaluate(studyMetadataRows, consumer, validationSummary);
+
       logger.info("Start to check uniqueness of study metadata spreadsheet");
       uniquenessEvaluator.evaluate(studyMetadataRows, consumer, validationSummary);
+
       logger.info("Start to check validity of study metadata spreadsheet");
       studyValidityEvaluator.evaluate(metadataFilePath, studyMetadataRows, consumer, validationSummary);
 

@@ -25,6 +25,7 @@ public class EvaluationSheetReportWriter {
   private final int startChartColumnNumber = 0;
   private final int startChartRowNumber = 20;
   private final int startContentRowNumber = 0;
+  private final int maxLenth = 10000;
   private final String issues = "Issues";
   private final String metadataRecords = "Metadata Records";
   private Workbook workbook;
@@ -79,7 +80,7 @@ public class EvaluationSheetReportWriter {
     if (sampleResult instanceof SpreadsheetValidationResult) {
       createIssuePageHeader(headerRow, "Row", "Study PHS", "Column", "Value", "Issue Type", "Repair Suggestion");
     } else if (sampleResult instanceof JsonValidationResult) {
-      createIssuePageHeader(headerRow, "File Name", "Error Pointer", "Issue Type", "Error Message", "Suggestion");
+      createIssuePageHeader(headerRow, "File Path", "Error Pointer", "Issue Type", "Error Message", "Suggestion");
     }
   }
 
@@ -134,7 +135,11 @@ public class EvaluationSheetReportWriter {
       if(data.getFailedStudyCount() != null){
         row.createCell(2).setCellValue(data.getFailedStudyCount().toString());
       }
-      row.createCell(3).setCellValue(data.getFailedStudies());
+      String failedStudies = data.getFailedStudies();
+      if (failedStudies != null && failedStudies.length() > maxLenth) {
+        failedStudies = failedStudies.substring(0, maxLenth);
+      }
+      row.createCell(3).setCellValue(failedStudies);
 
       currentContentRowNumber++;
     }
@@ -158,12 +163,12 @@ public class EvaluationSheetReportWriter {
         row.createCell(1).setCellValue(spreadsheetResult.phsNumber());
         row.createCell(2).setCellValue(spreadsheetResult.column());
         row.createCell(3).setCellValue(spreadsheetResult.value() != null ? spreadsheetResult.value().toString() : "");
-        row.createCell(4).setCellValue(spreadsheetResult.issueType().name());
+        row.createCell(4).setCellValue(spreadsheetResult.issueType().getName());
         row.createCell(5).setCellValue(spreadsheetResult.repairSuggestion());
       } else if (result instanceof JsonValidationResult jsonResult) {
         row.createCell(0).setCellValue(jsonResult.fileName());
         row.createCell(1).setCellValue(jsonResult.pointer());
-        row.createCell(2).setCellValue(jsonResult.issueType().name());
+        row.createCell(2).setCellValue(jsonResult.issueType().getName());
         row.createCell(3).setCellValue(jsonResult.errorMessage());
         row.createCell(4).setCellValue(jsonResult.suggestion());
       }

@@ -9,5 +9,5 @@ import bmir.radx.metadata.evaluator.variable.VariableEvaluator;
 import java.nio.file.Path;
 
 public interface Evaluator<T extends ValidationResult> {
-  EvaluationReport<T> evaluate(Path filePath);
+  EvaluationReport<T> evaluate(Path... filePath);
 }

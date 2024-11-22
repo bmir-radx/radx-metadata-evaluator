@@ -5,9 +5,12 @@ import bmir.radx.metadata.evaluator.variable.AllVariablesRow;
 import bmir.radx.metadata.evaluator.variable.GlobalCodeBookRow;
 import bmir.radx.metadata.evaluator.variable.VariableMetadataRow;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -19,6 +22,9 @@ import static bmir.radx.metadata.evaluator.HeaderName.*;
 
 @Component
 public class SpreadsheetReader {
+  @Value("${radx.bundles.mapping.file.name}")
+  private String radxBundlesFileName;
+
   public List<VariableMetadataRow> readVariablesMetadata(Path filePath) throws IOException {
     try (var fileInputStream = new FileInputStream(filePath.toFile());
          var workbook = WorkbookFactory.create(fileInputStream)) {
@@ -72,6 +78,76 @@ public class SpreadsheetReader {
           .map(row -> mapRowToStudiesMetadata(row, headerMap))
           .collect(Collectors.toList());
     }
+  }
+
+  /***
+   * This method return the mappings of study PHS to StudyMetadataRow instance
+   */
+  public Map<String, StudyMetadataRow> getStudyMetadataMapping(Path filePath){
+    try (var fileInputStream = new FileInputStream(filePath.toFile());
+         var workbook = WorkbookFactory.create(fileInputStream)) {
+      var sheet = workbook.getSheetAt(0);
+      Map<HeaderName, Integer> headerMap = getHeaderMap(sheet.getRow(0));
+
+      // Find the column index for "STUDY PHS"
+      int studyPhsColumnIndex = headerMap.getOrDefault(HeaderName.STUDY_PHS, -1);
+      if (studyPhsColumnIndex == -1) {
+        throw new IllegalArgumentException("STUDY PHS column is missing in the sheet.");
+      }
+
+      return StreamSupport.stream(sheet.spliterator(), false)
+          .skip(1)
+          .filter(row -> !isRowEmpty(row, headerMap))
+          .collect(Collectors.toMap(
+              row -> getCellValueAsString(row.getCell(studyPhsColumnIndex)), // Key: STUDY PHS value
+              row -> mapRowToStudiesMetadata(row, headerMap),               // Value: Mapped StudyMetadataRow
+              (existing, replacement) -> {
+                // Print an error message for duplicates
+                System.err.println("Duplicate STUDY PHS key found at row " + replacement.rowNumber());
+                return existing;
+              }
+          ));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /***
+   * This method read RADx bundles spreadsheet and return data file name to study phs mappings
+   */
+  public Map<String, String> getDataFile2StudyMapping(){
+    Map<String, String> resultMap = new HashMap<>();
+
+    try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(radxBundlesFileName);
+         Workbook workbook = WorkbookFactory.create(inputStream)) {
+
+      Sheet sheet = workbook.getSheetAt(0);
+
+      for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+        Row row = sheet.getRow(rowIndex);
+
+        if (row == null) continue;
+
+        Cell phsCell = row.getCell(1);
+        Cell transformMetaCell = row.getCell(4);
+        Cell origMetaCell = row.getCell(7);
+
+        String phsValue = getCellValueAsString(phsCell);
+        String transformMetaValue = getCellValueAsString(transformMetaCell);
+        String origMetaValue = getCellValueAsString(origMetaCell);
+
+        if (!transformMetaValue.isEmpty() && !phsValue.isEmpty()) {
+          resultMap.put(transformMetaValue, phsValue);
+        }
+        if (!origMetaValue.isEmpty() && !phsValue.isEmpty()) {
+          resultMap.put(origMetaValue, phsValue);
+        }
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    return resultMap;
   }
 
   private Map<HeaderName, Integer> getHeaderMap(Row headerRow) {

@@ -137,8 +137,8 @@ public class LinkChecker {
       if (!resolvable) {
         urlCount.incrementUnresolvableURL();
         //Don't add this validation result because spreadsheet validator already handle this type of validation
-//        var result = new SpreadsheetValidationResult(INVALID_URL, fieldName, rowNumber, phs, null, url);
-//        validationResults.add(result);
+        var result = new SpreadsheetValidationResult(INVALID_URL, fieldName, rowNumber, phs, null, url);
+        validationResults.add(result);
       } else {
         urlCount.incrementResolvableURL();
       }
@@ -149,8 +149,26 @@ public class LinkChecker {
     try{
       var url = new URL(urlString);
       // Try resolving with HEAD first
-      return checkUrl(url, "HEAD") || checkUrl(url, "GET");
+//      return checkUrl(url, "HEAD") || checkUrl(url, "GET");
+      return checkUrl(url);
     } catch (MalformedURLException e) {
+      return false;
+    }
+  }
+
+  /**
+   * This method use GET method only to check if the provided url is resolvable
+   */
+  private boolean checkUrl(URL url){
+    try {
+      var connection = (HttpURLConnection) url.openConnection();
+      connection.setRequestMethod("GET");
+      connection.setConnectTimeout(5000);
+      connection.setReadTimeout(5000);
+      connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3");
+      int responseCode = connection.getResponseCode();
+      return (200 <= responseCode && responseCode <= 399);
+    } catch (IOException e) {
       return false;
     }
   }

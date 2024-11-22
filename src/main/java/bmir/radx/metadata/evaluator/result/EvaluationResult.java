@@ -63,6 +63,8 @@ public class EvaluationResult implements Result{
       Set<?> contentSet = (Set<?>) content;
       if (!contentSet.isEmpty() && contentSet.iterator().next() instanceof String) {
         return String.join(", ", (Set<String>) content);
+      } else{
+        return null;
       }
     }
     return content != null ? content.toString() : null;

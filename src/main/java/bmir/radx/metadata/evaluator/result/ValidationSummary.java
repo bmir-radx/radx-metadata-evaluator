@@ -32,6 +32,9 @@ public class ValidationSummary<T extends ValidationResult> {
   public void addInvalidMetadata(String metadata) {
     this.invalidMetadata.add(metadata);
   }
+  public void addMultiInvalidMetadata(List<String> metadataList){
+    this.invalidMetadata.addAll(metadataList);
+  }
 
   public void updateValidationResults(List<T> newValidationResults) {
     this.validationResults.addAll(newValidationResults);

@@ -6,7 +6,6 @@ import bmir.radx.metadata.evaluator.result.ValidationSummary;
 import bmir.radx.metadata.evaluator.util.IssueTypeMapping;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -58,7 +57,7 @@ public class StudyAccuracyEvaluator {
       if(incorrectStudies.contains(row.studyPHS())){
         validationSummary.addInvalidMetadata(row.studyPHS());
         var result = new SpreadsheetValidationResult(
-            IssueTypeMapping.IssueType.INACCURATE_RECORD,
+            IssueTypeMapping.IssueType.INACCURATE_FIELD,
             CLINICALTRIALS_GOV_URL.getHeaderName(),
             row.rowNumber(),
             row.studyPHS(),

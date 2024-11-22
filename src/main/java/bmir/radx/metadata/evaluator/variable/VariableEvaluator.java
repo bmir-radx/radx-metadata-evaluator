@@ -25,8 +25,9 @@ public class VariableEvaluator implements Evaluator<SpreadsheetValidationResult>
     this.consistentEvaluator = consistentEvaluator;
   }
 
-  public EvaluationReport<SpreadsheetValidationResult> evaluate(Path metadataFilePath) {
+  public EvaluationReport<SpreadsheetValidationResult> evaluate(Path... filePaths) {
 //  public EvaluationReport evaluateSingleDataFile(FileInputStream integratedFileInputStream) {
+    Path metadataFilePath = filePaths[0];
     var results = new ArrayList<EvaluationResult>();
     Consumer<EvaluationResult> consumer = results::add;
     var variableMetadataReader = new SpreadsheetReader();

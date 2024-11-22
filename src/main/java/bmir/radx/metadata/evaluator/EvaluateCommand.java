@@ -104,8 +104,13 @@ public class EvaluateCommand implements Callable<Integer> {
     }
 
     if (datafile != null){
-      var report = dataFileEvaluator.evaluate(datafile);
-      reports.put(dataFiles, report);
+      if(study != null){
+        var report = dataFileEvaluator.evaluate(datafile, study);
+        reports.put(dataFiles, report);
+      } else{
+        var report = dataFileEvaluator.evaluate(datafile);
+        reports.put(dataFiles, report);
+      }
     }
 
     var workbook = new XSSFWorkbook();

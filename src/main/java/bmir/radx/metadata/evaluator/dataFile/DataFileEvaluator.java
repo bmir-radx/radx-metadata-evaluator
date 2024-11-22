@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 @Component
@@ -22,6 +23,8 @@ public class DataFileEvaluator implements Evaluator<JsonValidationResult> {
   private final DataFileValidityEvaluator validityEvaluator;
   private final DataFileVocabularyEvaluator dataFileVocabularyEvaluator;
   private final DataFileAccessibilityEvaluator accessibilityEvaluator;
+  private final DataFileConsistencyEvaluator consistencyEvaluator;
+  private final DataFileUniquenessEvaluator uniquenessEvaluator;
   private final DataFileAccuracyEvaluator accuracyEvaluator;
 
   public DataFileEvaluator(DataFileMetadataReader dataFileMetadataReader,
@@ -29,20 +32,27 @@ public class DataFileEvaluator implements Evaluator<JsonValidationResult> {
                            DataFileValidityEvaluator validityEvaluator,
                            DataFileVocabularyEvaluator dataFileVocabularyEvaluator,
                            DataFileAccessibilityEvaluator accessibilityEvaluator,
+                           DataFileConsistencyEvaluator consistencyEvaluator,
+                           DataFileUniquenessEvaluator uniquenessEvaluator,
                            DataFileAccuracyEvaluator accuracyEvaluator) {
     this.dataFileMetadataReader = dataFileMetadataReader;
     this.completenessEvaluator = completenessEvaluator;
     this.validityEvaluator = validityEvaluator;
     this.dataFileVocabularyEvaluator = dataFileVocabularyEvaluator;
     this.accessibilityEvaluator = accessibilityEvaluator;
+    this.consistencyEvaluator = consistencyEvaluator;
+    this.uniquenessEvaluator = uniquenessEvaluator;
     this.accuracyEvaluator = accuracyEvaluator;
   }
 
-  public EvaluationReport<JsonValidationResult> evaluate(Path filepath){
+  public EvaluationReport<JsonValidationResult> evaluate(Path... filePaths){
+    int numberOfPaths = filePaths.length;
+    Path dataFilePath = filePaths[0];
+
     var results = new ArrayList<EvaluationResult>();
     Consumer<EvaluationResult> consumer = results::add;
 
-    var metadataInstances = dataFileMetadataReader.readDataFileMetadata(filepath);
+    var metadataInstances = dataFileMetadataReader.readDataFileMetadata(dataFilePath);
     var metadataInstancesList = new ArrayList<>(metadataInstances.values());
     var validationResults = new ArrayList<JsonValidationResult>();
     var invalidMetadata = new HashSet<String>();
@@ -50,12 +60,26 @@ public class DataFileEvaluator implements Evaluator<JsonValidationResult> {
 
     logger.info("Start to evaluate the completeness of data file metadata");
     completenessEvaluator.evaluate(metadataInstancesList, consumer);
+
     logger.info("Start to evaluate the vocabularies of data file metadata");
     dataFileVocabularyEvaluator.evaluate(metadataInstancesList, consumer);
+
     logger.info("Start to evaluate the accessibility of data file metadata");
     accessibilityEvaluator.evaluate(metadataInstances, consumer, validationReport);
+
+    logger.info("Start to evaluate the consistency of data file metadata");
+    consistencyEvaluator.evaluate(metadataInstances, consumer, validationReport);
+
     logger.info("Start to evaluate the accuracy of data file metadata");
-    accuracyEvaluator.evaluate(metadataInstances, consumer, validationReport);
+    //If study path is also provided, apply cross-check of metadata between study and data file metadata
+    if(numberOfPaths > 1){
+      Path studyPath = filePaths[1];
+      accuracyEvaluator.evaluate(Optional.of(studyPath), metadataInstances, consumer, validationReport);
+    }
+
+    logger.info("Start to evaluate the uniqueness of data file metadata");
+    uniquenessEvaluator.evaluate(metadataInstances, consumer, validationReport);
+
     logger.info("Start to evaluate the validity of data file metadata");
     validityEvaluator.evaluate(metadataInstances, consumer, validationReport);
 

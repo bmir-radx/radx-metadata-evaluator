@@ -11,7 +11,7 @@ import java.util.function.Consumer;
 
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.CONSISTENCY;
 import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
-import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.INCONSISTENT_RECORD;
+import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.INCONSISTENT_FIELD;
 
 @Component
 public class StudyConsistencyEvaluator {
@@ -23,7 +23,7 @@ public class StudyConsistencyEvaluator {
         inconsistentMultiSitesRows.add(row.studyPHS());
         validationSummary.addInvalidMetadata(row.studyPHS());
         validationResults.add(
-            new SpreadsheetValidationResult(INCONSISTENT_RECORD,
+            new SpreadsheetValidationResult(INCONSISTENT_FIELD,
                 "MULTI-CENTER STUDY?",
                 row.rowNumber(),
                 row.studyPHS(),
@@ -35,7 +35,7 @@ public class StudyConsistencyEvaluator {
     int totalStudies = rows.size();
     int inconsistentStudies = inconsistentMultiSitesRows.size();
     var rate = (double) (totalStudies - inconsistentStudies) / totalStudies * 100;
-    consumer.accept(new EvaluationResult(CONSISTENCY, CONSISTENT_STUDY_RATE, rate));
+    consumer.accept(new EvaluationResult(CONSISTENCY, CONSISTENT_RECORD_RATE, rate));
     consumer.accept(new EvaluationResult(CONSISTENCY, NUMBER_OF_INCONSISTENT_RECORDS, inconsistentStudies));
     if(inconsistentStudies > 0){
       consumer.accept(new EvaluationResult(CONSISTENCY, INCONSISTENT_STUDIES, inconsistentMultiSitesRows));

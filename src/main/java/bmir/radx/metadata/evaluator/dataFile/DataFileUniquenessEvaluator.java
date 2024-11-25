@@ -14,6 +14,7 @@ import java.util.function.Consumer;
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.UNIQUENESS;
 import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
 import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.DUPLICATE_RECORD;
+import static bmir.radx.metadata.evaluator.util.StudyPhsGetter.getStudyPhs;
 
 @Component
 public class DataFileUniquenessEvaluator {
@@ -31,7 +32,10 @@ public class DataFileUniquenessEvaluator {
         duplicates.addAll(paths);
         //add to invalid metadata list and update validation results
         validationSummary.addMultiInvalidMetadata(paths);
-        validationSummary.updateValidationResult(new JsonValidationResult(paths.get(0),null, DUPLICATE_RECORD, paths.toString(), null));
+        var filePath = entry.getKey();
+        var fileName = filePath.getFileName().toString();
+        var studyPhs = getStudyPhs(templateInstanceArtifacts.get(filePath));
+        validationSummary.updateValidationResult(new JsonValidationResult(studyPhs, fileName,null, DUPLICATE_RECORD, paths.toString(), null));
       }
     }
 

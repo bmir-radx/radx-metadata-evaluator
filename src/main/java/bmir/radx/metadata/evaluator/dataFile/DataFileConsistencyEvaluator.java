@@ -3,6 +3,9 @@ package bmir.radx.metadata.evaluator.dataFile;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.result.JsonValidationResult;
 import bmir.radx.metadata.evaluator.result.ValidationSummary;
+import com.tupilabs.human_name_parser.HumanNameParserBuilder;
+import com.tupilabs.human_name_parser.HumanNameParserParser;
+import com.tupilabs.human_name_parser.Name;
 import org.metadatacenter.artifacts.model.core.TemplateInstanceArtifact;
 import org.springframework.stereotype.Component;
 
@@ -13,6 +16,7 @@ import java.util.function.Consumer;
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.CONSISTENCY;
 import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
 import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.INCONSISTENT_FIELD;
+import static bmir.radx.metadata.evaluator.util.StudyPhsGetter.getStudyPhs;
 
 @Component
 public class DataFileConsistencyEvaluator {
@@ -63,7 +67,8 @@ public class DataFileConsistencyEvaluator {
         String givenNameField;
         String familyNameField;
         String typeField;
-        String fieldName;
+        String studyPhs = getStudyPhs(templateInstanceArtifact);
+        String fileName = filePath.getFileName().toString();
 
         if(element.equals(DATA_FILE_CREATORS)){
             nameField = CREATOR_NAME;
@@ -86,27 +91,31 @@ public class DataFileConsistencyEvaluator {
             var familyName = fields.get(familyNameField).jsonLdValue();
             var type = fields.get(typeField).label();
             if(name.isPresent() && type.equals(Optional.of("Person"))){
-                var nameParts = parseFullName(name.get(), element);
-                var parsedGivenName = nameParts.get(givenNameField);
-                var parsedFamilyName = nameParts.get(familyNameField);
-                if(!isCorrectName(parsedFamilyName, familyName)){
-                    fieldName = familyNameField;
-                    processIncorrectName(name.get(), parsedFamilyName, familyName, i, filePath.toString(), element, fieldName, validationSummary);
-                }
-                if(!isCorrectName(parsedGivenName, givenName)){
-                    fieldName = givenNameField;
-                    processIncorrectName(name.get(), parsedGivenName, givenName, i, filePath.toString(), element, fieldName, validationSummary);
-                }
+                //Using HumanNameParse Library
+                Name fullName = new Name(name.get());
+                HumanNameParserBuilder builder = new HumanNameParserBuilder(fullName);
+                HumanNameParserParser parser = builder.build();
+                String parsedFirstName = parser.getFirst();
+                String parsedFamilyName = parser.getLast();
+                String parsedMiddleName = parser.getMiddle();
+                String parsedGivenName = parsedFirstName + " " + parsedMiddleName;
+
+//                var nameParts = parseFullName(name.get(), element);
+//                var parsedGivenName = nameParts.get(givenNameField);
+//                var parsedFamilyName = nameParts.get(familyNameField);
+
+                processIncorrectName(name.get(), Optional.of(parsedFamilyName), familyName, i, studyPhs, fileName, element, familyNameField, validationSummary);
+                processIncorrectName(name.get(), Optional.of(parsedGivenName), givenName, i, studyPhs, fileName, element, givenNameField, validationSummary);
             }
             i++;
         }
     }
 
-    private void processIncorrectName(String fullName, Optional<String> parsedName, Optional<String> providedName, Integer i, String filePath, String elementName, String fieldName, ValidationSummary<JsonValidationResult> validationSummary){
+    private void processIncorrectName(String fullName, Optional<String> parsedName, Optional<String> providedName, Integer i, String studyPhs, String fileName, String elementName, String fieldName, ValidationSummary<JsonValidationResult> validationSummary){
         if(!isCorrectName(parsedName, providedName)){
             var pointer = getPointer(i, elementName, fieldName);
             var errorMessage = getErrorMessage(fullName, providedName.orElse(null), fieldName);
-            validationSummary.updateValidationResult(new JsonValidationResult(filePath, pointer, INCONSISTENT_FIELD, errorMessage, parsedName.orElse(null)));
+            validationSummary.updateValidationResult(new JsonValidationResult(studyPhs, fileName, pointer, INCONSISTENT_FIELD, errorMessage, parsedName.orElse(null)));
         }
     }
 

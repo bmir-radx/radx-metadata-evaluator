@@ -45,7 +45,7 @@ public class StudyDataFileCrossEvaluator {
 
         if(studyRecords.containsKey(studyPhs)){
           var studyArtifact = studyRecords.get(studyPhs);
-          evaluateSinglePair(dataFilePath, dataFileArtifact, studyArtifact, inaccurateStudies, validationSummary);
+          evaluateSinglePair(dataFileName, dataFileArtifact, studyArtifact, inaccurateStudies, validationSummary);
         } else{
           System.err.println(studyPhs + " is not exist in study metadata");
         }
@@ -57,12 +57,11 @@ public class StudyDataFileCrossEvaluator {
     }
   }
 
-  private void evaluateSinglePair(Path dataFilePath,
+  private void evaluateSinglePair(String dataFileName,
                                   TemplateInstanceArtifact dataFileArtifact,
                                   StudyMetadataRow studyArtifact,
                                   Set<String> inaccurateStudies,
                                   ValidationSummary<JsonValidationResult> validationSummary){
-
     var studyPhs = studyArtifact.studyPHS();
     var studyName = studyArtifact.studyTitle();
     var studyGrandNumber = studyArtifact.nihGrantNumber();
@@ -76,30 +75,31 @@ public class StudyDataFileCrossEvaluator {
     var dataFileFundingId = fundingSources.get(0).singleInstanceFieldInstances().get(AWARD_LOCAL_IDENTIFIER).jsonLdValue();
 
     // Check PHS
-    dataFileStudyPhs.ifPresent(s -> compareValues(dataFilePath, studyPhs, s, DATA_FILE_PARENT_STUDIES, PHS_IDENTIFIER, inaccurateStudies, validationSummary));
+    dataFileStudyPhs.ifPresent(s -> compareValues(studyPhs, dataFileName, studyPhs, s, DATA_FILE_PARENT_STUDIES, PHS_IDENTIFIER, inaccurateStudies, validationSummary));
     // Check Study Name
-    dataFileStudyName.ifPresent(s -> compareValues(dataFilePath, studyName, s, DATA_FILE_PARENT_STUDIES, STUDY_NAME, inaccurateStudies, validationSummary));
+    dataFileStudyName.ifPresent(s -> compareValues(studyPhs, dataFileName, studyName, s, DATA_FILE_PARENT_STUDIES, STUDY_NAME, inaccurateStudies, validationSummary));
     // Check Award Local Identifier
     if(dataFileFundingId.isPresent()){
       var dataFileFundingIdString = dataFileFundingId.get().replaceAll(" ", "");
-      compareValues(dataFilePath, studyGrandNumber, dataFileFundingIdString, DATA_FILE_FUNDING_SOURCES, AWARD_LOCAL_IDENTIFIER, inaccurateStudies, validationSummary);
+      compareValues(studyPhs, dataFileName, studyGrandNumber, dataFileFundingIdString, DATA_FILE_FUNDING_SOURCES, AWARD_LOCAL_IDENTIFIER, inaccurateStudies, validationSummary);
     }
   }
 
-  private void compareValues(Path dataFilePath,
+  private void compareValues(String studyPhs,
+                             String dataFileName,
                              String studyMetadata,
                              String dataFileMetadata,
                              String element,
                              String field,
                              Set<String> inaccurateStudies,
                              ValidationSummary<JsonValidationResult> validationSummary){
-    String dataFileName = dataFilePath.getFileName().toString();
+
     if(!dataFileMetadata.equals(studyMetadata)){
       inaccurateStudies.add(dataFileName);
       var pointer = getPointer(element, field);
       var errorMessage = getErrorMessage(field, dataFileMetadata);
       validationSummary.addInvalidMetadata(dataFileName);
-      validationSummary.updateValidationResult(new JsonValidationResult(dataFilePath.toString(), pointer, INACCURATE_FIELD, errorMessage, studyMetadata));
+      validationSummary.updateValidationResult(new JsonValidationResult(studyPhs, dataFileName, pointer, INACCURATE_FIELD, errorMessage, studyMetadata));
     }
   }
 

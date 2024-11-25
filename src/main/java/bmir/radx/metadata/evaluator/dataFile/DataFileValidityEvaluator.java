@@ -20,6 +20,7 @@ import java.util.function.Consumer;
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.VALIDITY;
 import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
 import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.getIssueType;
+import static bmir.radx.metadata.evaluator.util.StudyPhsGetter.getStudyPhs;
 
 @Component
 public class DataFileValidityEvaluator {
@@ -50,13 +51,14 @@ public class DataFileValidityEvaluator {
     for(var instance: templateInstanceArtifacts.entrySet()){
       var path  = instance.getKey();
       var fileName = path.getFileName().toString();
+      var studyPhs = getStudyPhs(instance.getValue());
       String instanceString = null;
       try {
         instanceString = Files.readString(path);
       } catch (IOException e) {
         throw new RuntimeException("Unable to read file " + path);
       }
-      if(!isValid(fileName, templateString, instanceString, results)){
+      if(!isValid(studyPhs, fileName, templateString, instanceString, results)){
         invalidInstances.add(fileName);
       }
     }
@@ -71,7 +73,7 @@ public class DataFileValidityEvaluator {
 
   }
 
-  public boolean isValid(String fileName, String templateString, String instanceString, List<JsonValidationResult> results) {
+  public boolean isValid(String studyPhs, String fileName, String templateString, String instanceString, List<JsonValidationResult> results) {
 //    var terminologyServerHandler = getTerminologyServerHandler();
 //    var validator = validatorFactory.createValidator(getLiteralFieldValidatorsComponent(), terminologyServerHandler);
     var validator = validatorFactory.createValidator(new LiteralFieldValidators(new HashMap<>()));
@@ -93,6 +95,7 @@ public class DataFileValidityEvaluator {
         errorCount += 1;
         //TODO need to add fileName and suggestion
         errors.add(new JsonValidationResult(
+            studyPhs,
             fileName,
             result.pointer(),
             getIssueType(result.validationName()),

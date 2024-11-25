@@ -80,7 +80,7 @@ public class EvaluationSheetReportWriter {
     if (sampleResult instanceof SpreadsheetValidationResult) {
       createIssuePageHeader(headerRow, "Row", "Study PHS", "Column", "Value", "Issue Type", "Repair Suggestion");
     } else if (sampleResult instanceof JsonValidationResult) {
-      createIssuePageHeader(headerRow, "File Path", "Error Pointer", "Issue Type", "Error Message", "Suggestion");
+      createIssuePageHeader(headerRow, "Study PHS", "File Name", "Error Pointer", "Issue Type", "Error Message", "Suggestion");
     }
   }
 
@@ -166,11 +166,12 @@ public class EvaluationSheetReportWriter {
         row.createCell(4).setCellValue(spreadsheetResult.issueType().getName());
         row.createCell(5).setCellValue(spreadsheetResult.repairSuggestion());
       } else if (result instanceof JsonValidationResult jsonResult) {
-        row.createCell(0).setCellValue(jsonResult.fileName());
-        row.createCell(1).setCellValue(jsonResult.pointer());
-        row.createCell(2).setCellValue(jsonResult.issueType().getName());
-        row.createCell(3).setCellValue(jsonResult.errorMessage());
-        row.createCell(4).setCellValue(jsonResult.suggestion());
+        row.createCell(0).setCellValue(jsonResult.studyPhs());
+        row.createCell(1).setCellValue(jsonResult.fileName());
+        row.createCell(2).setCellValue(jsonResult.pointer());
+        row.createCell(3).setCellValue(jsonResult.issueType().getName());
+        row.createCell(4).setCellValue(jsonResult.errorMessage());
+        row.createCell(5).setCellValue(jsonResult.suggestion());
       }
     }
   }

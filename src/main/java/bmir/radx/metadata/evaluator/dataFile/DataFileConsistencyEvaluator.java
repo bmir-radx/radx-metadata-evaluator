@@ -3,6 +3,7 @@ package bmir.radx.metadata.evaluator.dataFile;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.result.JsonValidationResult;
 import bmir.radx.metadata.evaluator.result.ValidationSummary;
+import bmir.radx.metadata.evaluator.util.StudyPhsGetter;
 import com.tupilabs.human_name_parser.HumanNameParserBuilder;
 import com.tupilabs.human_name_parser.HumanNameParserParser;
 import com.tupilabs.human_name_parser.Name;
@@ -16,7 +17,6 @@ import java.util.function.Consumer;
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.CONSISTENCY;
 import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
 import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.INCONSISTENT_FIELD;
-import static bmir.radx.metadata.evaluator.util.StudyPhsGetter.getStudyPhs;
 
 @Component
 public class DataFileConsistencyEvaluator {
@@ -30,6 +30,11 @@ public class DataFileConsistencyEvaluator {
     private static final String CONTRIBUTOR_GIVEN_NAME = "Contributor Given Name";
     private static final String CONTRIBUTOR_FAMILY_NAME = "Contributor Family Name";
     private static final String CONTRIBUTOR_TYPE = "Contributor Type";
+    private final StudyPhsGetter studyPhsGetter;
+
+    public DataFileConsistencyEvaluator(StudyPhsGetter studyPhsGetter) {
+        this.studyPhsGetter = studyPhsGetter;
+    }
 
     public void evaluate(Map<Path, TemplateInstanceArtifact> templateInstanceArtifacts,
                          Consumer<EvaluationResult> consumer,
@@ -67,7 +72,7 @@ public class DataFileConsistencyEvaluator {
         String givenNameField;
         String familyNameField;
         String typeField;
-        String studyPhs = getStudyPhs(templateInstanceArtifact);
+        String studyPhs = studyPhsGetter.getCleanStudyPhs(templateInstanceArtifact);
         String fileName = filePath.getFileName().toString();
 
         if(element.equals(DATA_FILE_CREATORS)){

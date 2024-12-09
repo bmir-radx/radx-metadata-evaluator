@@ -5,6 +5,7 @@ import bmir.radx.metadata.evaluator.result.JsonValidationResult;
 import bmir.radx.metadata.evaluator.result.ValidationSummary;
 import bmir.radx.metadata.evaluator.sharedComponents.LinkChecker;
 import bmir.radx.metadata.evaluator.util.ReporterGetter;
+import bmir.radx.metadata.evaluator.util.StudyPhsGetter;
 import org.metadatacenter.artifacts.model.core.TemplateInstanceArtifact;
 import org.springframework.stereotype.Component;
 
@@ -19,10 +20,12 @@ import static bmir.radx.metadata.evaluator.sharedComponents.EvaluationReportUpda
 public class DataFileAccessibilityEvaluator {
   private final LinkChecker linkChecker;
   private final ReporterGetter reporterGetter;
+  private final StudyPhsGetter studyPhsGetter;
 
-  public DataFileAccessibilityEvaluator(LinkChecker linkChecker, ReporterGetter reporterGetter) {
+  public DataFileAccessibilityEvaluator(LinkChecker linkChecker, ReporterGetter reporterGetter, StudyPhsGetter studyPhsGetter) {
     this.linkChecker = linkChecker;
     this.reporterGetter = reporterGetter;
+    this.studyPhsGetter = studyPhsGetter;
   }
 
   public void evaluate(Map<Path, TemplateInstanceArtifact> templateInstanceArtifacts, Consumer<EvaluationResult> consumer, ValidationSummary<JsonValidationResult> validationSummary){
@@ -33,8 +36,10 @@ public class DataFileAccessibilityEvaluator {
     var inaccessibleRecords = new HashSet<String>();
     for(var instance : templateInstanceArtifacts.entrySet()){
       var fileName = instance.getKey().getFileName().toString();
-      var instanceReporter = reporterGetter.getTemplateInstanceValuesReporter(instance.getValue());
-      var urlCount = linkChecker.checkJson(fileName, templateReporter, instanceReporter, validationSummary.getValidationResults());
+      var instanceArtifact = instance.getValue();
+      var studyPHS = studyPhsGetter.getCleanStudyPhs(instanceArtifact);
+      var instanceReporter = reporterGetter.getTemplateInstanceValuesReporter(instanceArtifact);
+      var urlCount = linkChecker.checkJson(studyPHS, fileName, templateReporter, instanceReporter, validationSummary.getValidationResults());
       //update total url distribution
       updateDistribution(urlCount.getTotalURL(), totalUrlDistribution);
       totalUrl += urlCount.getTotalURL();

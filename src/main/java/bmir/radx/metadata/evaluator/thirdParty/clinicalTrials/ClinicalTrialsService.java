@@ -30,7 +30,7 @@ public class ClinicalTrialsService {
         .retrieve()
         .onStatus(
             status -> !status.is2xxSuccessful(),  // Check if status is not 2xx (like 200)
-            clientResponse -> Mono.empty()
+            clientResponse -> Mono.error(new RuntimeException("ClinicalTrials GET request failed with status: " + clientResponse.statusCode()))
         )
         .bodyToMono(ClinicalTrialsResponse.class)
         .blockOptional()

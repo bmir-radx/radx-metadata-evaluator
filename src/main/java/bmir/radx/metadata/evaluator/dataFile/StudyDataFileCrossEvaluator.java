@@ -8,6 +8,7 @@ import org.metadatacenter.artifacts.model.core.TemplateInstanceArtifact;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Path;
+import java.text.Normalizer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -62,7 +63,7 @@ public class StudyDataFileCrossEvaluator {
                                   StudyMetadataRow studyArtifact,
                                   Set<String> inaccurateStudies,
                                   ValidationSummary<JsonValidationResult> validationSummary){
-    var studyPhs = studyArtifact.studyPHS();
+    var studyPhs = studyArtifact.studyPHS().trim();
     var studyName = studyArtifact.studyTitle();
     var studyGrandNumber = studyArtifact.nihGrantNumber();
 
@@ -76,8 +77,10 @@ public class StudyDataFileCrossEvaluator {
 
     // Check PHS
     dataFileStudyPhs.ifPresent(s -> compareValues(studyPhs, dataFileName, studyPhs, s, DATA_FILE_PARENT_STUDIES, PHS_IDENTIFIER, inaccurateStudies, validationSummary));
+
     // Check Study Name
     dataFileStudyName.ifPresent(s -> compareValues(studyPhs, dataFileName, studyName, s, DATA_FILE_PARENT_STUDIES, STUDY_NAME, inaccurateStudies, validationSummary));
+
     // Check Award Local Identifier
     if(dataFileFundingId.isPresent()){
       var dataFileFundingIdString = dataFileFundingId.get().replaceAll(" ", "");
@@ -93,14 +96,24 @@ public class StudyDataFileCrossEvaluator {
                              String field,
                              Set<String> inaccurateStudies,
                              ValidationSummary<JsonValidationResult> validationSummary){
-
-    if(!dataFileMetadata.equals(studyMetadata)){
+    var normalizedStudyMetadata = normalizeMetadata(studyMetadata);
+    var normalizedDataFileMetadasta = normalizeMetadata(dataFileMetadata);
+    if(!normalizedDataFileMetadasta.equals(normalizedStudyMetadata)){
       inaccurateStudies.add(dataFileName);
       var pointer = getPointer(element, field);
       var errorMessage = getErrorMessage(field, dataFileMetadata);
       validationSummary.addInvalidMetadata(dataFileName);
       validationSummary.updateValidationResult(new JsonValidationResult(studyPhs, dataFileName, pointer, INACCURATE_FIELD, errorMessage, studyMetadata));
     }
+  }
+
+  private String normalizeMetadata(String sentence) {
+    // Remove punctuation, extra spaces, normalize casing, and trim
+    return Normalizer.normalize(sentence, Normalizer.Form.NFD)
+        .replaceAll("[^a-zA-Z0-9\\s]", "") // Remove non-alphanumeric characters except spaces
+        .toLowerCase()
+        .replaceAll("\\s+", " ")
+        .trim();
   }
 
   private String getPointer(String element, String field){

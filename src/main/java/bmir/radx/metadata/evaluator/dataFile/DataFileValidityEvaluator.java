@@ -3,6 +3,7 @@ package bmir.radx.metadata.evaluator.dataFile;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.result.JsonValidationResult;
 import bmir.radx.metadata.evaluator.result.ValidationSummary;
+import bmir.radx.metadata.evaluator.util.StudyPhsGetter;
 import bmir.radx.metadata.evaluator.util.TemplateGetter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.stanford.bmir.radx.metadata.validator.lib.*;
@@ -20,7 +21,6 @@ import java.util.function.Consumer;
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.VALIDITY;
 import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
 import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.getIssueType;
-import static bmir.radx.metadata.evaluator.util.StudyPhsGetter.getStudyPhs;
 
 @Component
 public class DataFileValidityEvaluator {
@@ -33,13 +33,15 @@ public class DataFileValidityEvaluator {
   private final JsonSchemaArtifactRenderer renderer;
   private final ValidatorFactory validatorFactory;
   private final TemplateGetter templateGetter;
+  private final StudyPhsGetter studyPhsGetter;
 
 
-  public DataFileValidityEvaluator(ObjectMapper mapper, JsonSchemaArtifactRenderer renderer, ValidatorFactory validatorFactory, TemplateGetter templateGetter) {
+  public DataFileValidityEvaluator(ObjectMapper mapper, JsonSchemaArtifactRenderer renderer, ValidatorFactory validatorFactory, TemplateGetter templateGetter, StudyPhsGetter studyPhsGetter) {
     this.mapper = mapper;
     this.renderer = renderer;
     this.templateGetter = templateGetter;
     this.validatorFactory = validatorFactory;
+    this.studyPhsGetter = studyPhsGetter;
   }
 
   public void evaluate(Map<Path, TemplateInstanceArtifact> templateInstanceArtifacts,
@@ -51,7 +53,7 @@ public class DataFileValidityEvaluator {
     for(var instance: templateInstanceArtifacts.entrySet()){
       var path  = instance.getKey();
       var fileName = path.getFileName().toString();
-      var studyPhs = getStudyPhs(instance.getValue());
+      var studyPhs = studyPhsGetter.getCleanStudyPhs(instance.getValue());
       String instanceString = null;
       try {
         instanceString = Files.readString(path);

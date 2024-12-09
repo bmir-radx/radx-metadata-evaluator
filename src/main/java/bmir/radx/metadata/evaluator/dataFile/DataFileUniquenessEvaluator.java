@@ -3,6 +3,7 @@ package bmir.radx.metadata.evaluator.dataFile;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.result.JsonValidationResult;
 import bmir.radx.metadata.evaluator.result.ValidationSummary;
+import bmir.radx.metadata.evaluator.util.StudyPhsGetter;
 import org.metadatacenter.artifacts.model.core.InstanceArtifact;
 import org.metadatacenter.artifacts.model.core.TemplateInstanceArtifact;
 import org.springframework.stereotype.Component;
@@ -14,10 +15,15 @@ import java.util.function.Consumer;
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.UNIQUENESS;
 import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
 import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.DUPLICATE_RECORD;
-import static bmir.radx.metadata.evaluator.util.StudyPhsGetter.getStudyPhs;
 
 @Component
 public class DataFileUniquenessEvaluator {
+  private final StudyPhsGetter studyPhsGetter;
+
+  public DataFileUniquenessEvaluator(StudyPhsGetter studyPhsGetter) {
+    this.studyPhsGetter = studyPhsGetter;
+  }
+
 
   public void evaluate(Map<Path, TemplateInstanceArtifact> templateInstanceArtifacts,
                        Consumer<EvaluationResult> consumer,
@@ -34,7 +40,7 @@ public class DataFileUniquenessEvaluator {
         validationSummary.addMultiInvalidMetadata(paths);
         var filePath = entry.getKey();
         var fileName = filePath.getFileName().toString();
-        var studyPhs = getStudyPhs(templateInstanceArtifacts.get(filePath));
+        var studyPhs = studyPhsGetter.getCleanStudyPhs(templateInstanceArtifacts.get(filePath));
         validationSummary.updateValidationResult(new JsonValidationResult(studyPhs, fileName,null, DUPLICATE_RECORD, paths.toString(), null));
       }
     }

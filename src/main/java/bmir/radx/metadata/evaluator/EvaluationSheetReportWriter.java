@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static bmir.radx.metadata.evaluator.result.DataFactory.getBasicInfoData;
 import static bmir.radx.metadata.evaluator.result.DataFactory.getCriterionData;
@@ -27,17 +28,21 @@ public class EvaluationSheetReportWriter {
   private final int startContentRowNumber = 0;
   private final int maxLenth = 10000;
   private final String issues = "Issues";
-  private final String metadataRecords = "Metadata Records";
+  private final String METADATA_RECORDS = "Metadata Records";
+  private final String EVALUATION_REPORT = "Evaluation Report";
+  private MetadataEntity metadataEntity;
   private Workbook workbook;
 
-  public void writeReports(Map<String, EvaluationReport<? extends ValidationResult>> reports, Path out) {
-    for (var entrySet : reports.entrySet()) {
-      locateWritingPosition();
-      var entity = entrySet.getKey();
-      var report = entrySet.getValue();
-      writeEvaluationReport(entity, report, out);
-      writeIssuesPage(entity, report.validationResults());
-    }
+  public void setWorkbook(MetadataEntity metadataEntity, Workbook workbook) {
+    this.workbook = workbook;
+    this.metadataEntity = metadataEntity;
+  }
+
+  public void writeReports(EvaluationReport<? extends ValidationResult> report, Path out) {
+    locateWritingPosition();
+    writeEvaluationReport(report, out);
+    writeIssuesPage(report.validationResults());
+
   }
 
   private void locateWritingPosition(){
@@ -45,23 +50,52 @@ public class EvaluationSheetReportWriter {
     currentChartColumnNumber = startChartColumnNumber;
     currentContentRowNumber = startContentRowNumber;
   }
-  private void writeEvaluationReport(String entity, EvaluationReport<? extends ValidationResult> report, Path out){
+  private void writeEvaluationReport(EvaluationReport<? extends ValidationResult> report, Path out){
     var evaluationResults = report.evaluationResults();
     if(!evaluationResults.isEmpty()){
-      var eSheetName = entity + " Evaluation Report";
-      var eSheet = workbook.createSheet(eSheetName);
+      var eSheet = workbook.createSheet(EVALUATION_REPORT);
 
 //      writeEvaluationReportHeader(eSheet);
-      writeEvaluationContent(eSheet, eSheetName, report, out);
+      writeEvaluationContent(eSheet, report, out);
     }
   }
 
-  private <T extends ValidationResult> void writeIssuesPage(String entity, List<T> validationResults){
-    if(!validationResults.isEmpty()){
-      var vSheetName = entity + " Validation Report";
-      var vSheet = workbook.createSheet(vSheetName);
-      writeIssuePageHeader(vSheet, validationResults.get(0));
-      writeIssuePageContent(validationResults, vSheet);
+  /**
+   * This method generate single issue page by issue type
+   */
+  private <T extends ValidationResult> void writeIssuesPage(List<T> validationResults){
+    if (!validationResults.isEmpty()) {
+      // Group validation results by issue type
+      Map<String, List<T>> groupedResults = validationResults.stream()
+          .collect(Collectors.groupingBy(result -> {
+            if (result instanceof SpreadsheetValidationResult spreadsheetResult) {
+              return spreadsheetResult.issueType().getName();
+            } else if (result instanceof JsonValidationResult jsonResult) {
+              return jsonResult.issueType().getName();
+            }
+            return "Unknown Issue Type";
+          }));
+
+      // Sort issues by the issue level
+      Comparator<T> issueComparator = (result1, result2) -> {
+        if (result1 instanceof SpreadsheetValidationResult && result2 instanceof SpreadsheetValidationResult) {
+          return ((SpreadsheetValidationResult) result1).issueLevel().getLevel()
+              .compareTo(((SpreadsheetValidationResult) result2).issueLevel().getLevel());
+        } else if (result1 instanceof JsonValidationResult && result2 instanceof JsonValidationResult) {
+          return ((JsonValidationResult) result1).issueLevel().getLevel()
+              .compareTo(((JsonValidationResult) result2).issueLevel().getLevel());
+        }
+        return 0; // Default equality for unknown types
+      };
+      groupedResults.forEach((key, list) -> list.sort(issueComparator));
+
+
+      // Create a separate sheet for each issue type
+      groupedResults.forEach((issueType, results) -> {
+        var vSheet = workbook.createSheet(issueType);
+        writeIssuePageHeader(vSheet, results.get(0));
+        writeIssuePageContent(results, vSheet);
+      });
     }
   }
 
@@ -78,9 +112,9 @@ public class EvaluationSheetReportWriter {
   private void writeIssuePageHeader(Sheet sheet, ValidationResult sampleResult) {
     Row headerRow = sheet.createRow(0);
     if (sampleResult instanceof SpreadsheetValidationResult) {
-      createIssuePageHeader(headerRow, "Row", "Study PHS", "Column", "Value", "Issue Type", "Repair Suggestion");
+      createIssuePageHeader(headerRow, "UUID", "Study PHS", "Row Number", "Column", "Value", "Issue Level", "Repair Suggestion");
     } else if (sampleResult instanceof JsonValidationResult) {
-      createIssuePageHeader(headerRow, "Study PHS", "File Name", "Error Pointer", "Issue Type", "Error Message", "Suggestion");
+      createIssuePageHeader(headerRow, "UUID", "Study PHS", "File Name", "Error Pointer", "Issue Level", "Error Message", "Suggestion");
     }
   }
 
@@ -92,7 +126,6 @@ public class EvaluationSheetReportWriter {
   }
 
   private void writeEvaluationContent(Sheet sheet,
-                                      String sheetName,
                                       EvaluationReport<? extends ValidationResult> report,
                                       Path rootPath) {
     //write the Basic Info headers
@@ -150,7 +183,7 @@ public class EvaluationSheetReportWriter {
     }
 
     //add charts
-    getAndInsertCharts(sheet, sheetName, report, rootPath);
+    getAndInsertCharts(sheet, report, rootPath);
   }
 
   private <T extends ValidationResult> void writeIssuePageContent(List<T> validationResults, Sheet sheet) {
@@ -159,25 +192,26 @@ public class EvaluationSheetReportWriter {
       Row row = sheet.createRow(rowIndex++);
 
       if (result instanceof SpreadsheetValidationResult spreadsheetResult) {
-        row.createCell(0).setCellValue(spreadsheetResult.row());
-        row.createCell(1).setCellValue(spreadsheetResult.phsNumber());
-        row.createCell(2).setCellValue(spreadsheetResult.column());
-        row.createCell(3).setCellValue(spreadsheetResult.value() != null ? spreadsheetResult.value().toString() : "");
-        row.createCell(4).setCellValue(spreadsheetResult.issueType().getName());
-        row.createCell(5).setCellValue(spreadsheetResult.repairSuggestion());
+        row.createCell(0).setCellValue(spreadsheetResult.uuid());
+        row.createCell(1).setCellValue(spreadsheetResult.studyPhs());
+        row.createCell(2).setCellValue(spreadsheetResult.row());
+        row.createCell(3).setCellValue(spreadsheetResult.column());
+        row.createCell(4).setCellValue(spreadsheetResult.value() != null ? spreadsheetResult.value().toString() : "");
+        row.createCell(5).setCellValue(spreadsheetResult.issueLevel().getLevel());
+        row.createCell(6).setCellValue(spreadsheetResult.repairSuggestion());
       } else if (result instanceof JsonValidationResult jsonResult) {
-        row.createCell(0).setCellValue(jsonResult.studyPhs());
-        row.createCell(1).setCellValue(jsonResult.fileName());
-        row.createCell(2).setCellValue(jsonResult.pointer());
-        row.createCell(3).setCellValue(jsonResult.issueType().getName());
-        row.createCell(4).setCellValue(jsonResult.errorMessage());
-        row.createCell(5).setCellValue(jsonResult.suggestion());
+        row.createCell(0).setCellValue(jsonResult.uuid());
+        row.createCell(1).setCellValue(jsonResult.studyPhs());
+        row.createCell(2).setCellValue(jsonResult.fileName());
+        row.createCell(3).setCellValue(jsonResult.pointer());
+        row.createCell(4).setCellValue(jsonResult.issueLevel().getLevel());
+        row.createCell(5).setCellValue(jsonResult.errorMessage());
+        row.createCell(6).setCellValue(jsonResult.suggestion());
       }
     }
   }
 
   private void getAndInsertCharts(Sheet sheet,
-                                  String sheetName,
                                   EvaluationReport<? extends ValidationResult> report,
                                   Path rootPath){
     try {
@@ -185,15 +219,15 @@ public class EvaluationSheetReportWriter {
       var chartPath = getChartPath(rootPath);
 
       //generate validity pie chart
-      getAndInsertRingChart(sheetName, metadataRecords, chartPath, sheet, rConnection, report);
+      getAndInsertRingChart(METADATA_RECORDS, chartPath, sheet, rConnection, report);
       //generate issueType pie chart
-      getAndInsertRingChart(sheetName, issues, chartPath, sheet, rConnection, report);
+      getAndInsertRingChart(issues, chartPath, sheet, rConnection, report);
       //generate completion bar chart
-      getAndInsertStackedBarChart(sheetName, chartPath, sheet, rConnection, report);
+      getAndInsertStackedBarChart(chartPath, sheet, rConnection, report);
       //generate filled fields frequency charts
-      getAndInsertHistogramChart(sheetName, chartPath, sheet, rConnection, report.evaluationResults());
+      getAndInsertHistogramChart(chartPath, sheet, rConnection, report.evaluationResults());
       //generate controlled term bar chart
-      getAndInsertBarChart(sheetName, chartPath, sheet, rConnection, report);
+      getAndInsertBarChart(chartPath, sheet, rConnection, report);
       rConnection.close();
     } catch (RserveException e) {
       throw new RuntimeException("Something wrong with r connection");
@@ -214,10 +248,10 @@ public class EvaluationSheetReportWriter {
     }
   }
 
-  private void getAndInsertRingChart(String sheetName, String centerLabel, Path chartPath, Sheet sheet, RConnection rConnection, EvaluationReport<? extends ValidationResult> report) throws Exception {
-    var outputPath = chartPath.resolve(sheetName + " " + centerLabel + " Chart.png");
+  private void getAndInsertRingChart(String centerLabel, Path chartPath, Sheet sheet, RConnection rConnection, EvaluationReport<? extends ValidationResult> report) throws Exception {
+    var outputPath = chartPath.resolve(metadataEntity.getEntityName() + " " + centerLabel + " Chart.png");
     Map<String, Integer> data = null;
-    if(centerLabel.equals(metadataRecords)){
+    if(centerLabel.equals(METADATA_RECORDS)){
       data = getDataForValidityChart(report);
     } else{
       data = getDataForIssueTypeChart(report);
@@ -228,8 +262,8 @@ public class EvaluationSheetReportWriter {
     currentChartRowNumber += 25;
   }
 
-  private void getAndInsertStackedBarChart(String sheetName, Path chartPath, Sheet sheet, RConnection rConnection, EvaluationReport<? extends ValidationResult> report) throws REngineException {
-    var chartName = sheetName + " Field Completeness Chart.png";
+  private void getAndInsertStackedBarChart(Path chartPath, Sheet sheet, RConnection rConnection, EvaluationReport<? extends ValidationResult> report) throws REngineException {
+    var chartName = metadataEntity.getEntityName() + " Field Completeness Chart.png";
     var outputPath = chartPath.resolve(chartName);
     var completion = getDataForCompletenessChart(report);
     var completionBarChart = generateStackedBarScatter(rConnection, completion, outputPath.toString());
@@ -237,10 +271,10 @@ public class EvaluationSheetReportWriter {
     currentChartRowNumber += 25;
   }
 
-  private void getAndInsertBarChart(String sheetName, Path chartPath, Sheet sheet, RConnection rConnection, EvaluationReport<? extends ValidationResult> report) throws Exception {
+  private void getAndInsertBarChart(Path chartPath, Sheet sheet, RConnection rConnection, EvaluationReport<? extends ValidationResult> report) throws Exception {
     var ctDistribution = getDataForControlledTermBarChart(report);
     if(ctDistribution != null){
-      var chartName = sheetName + " Controlled Terms Distribution Chart.png";
+      var chartName = metadataEntity.getEntityName() + " Controlled Terms Distribution Chart.png";
       var outputPath = chartPath.resolve(chartName);
       var ctDistributionChart = generateCTDistributionChart(rConnection, ctDistribution, outputPath.toString());
       insertChartImageIntoSheet(sheet, ctDistributionChart, currentChartRowNumber, currentChartColumnNumber);
@@ -248,7 +282,7 @@ public class EvaluationSheetReportWriter {
     }
   }
 
-  private void getAndInsertHistogramChart(String sheetName, Path chartPath, Sheet sheet, RConnection rConnection, List<EvaluationResult> evaluationResults) throws Exception {
+  private void getAndInsertHistogramChart(Path chartPath, Sheet sheet, RConnection rConnection, List<EvaluationResult> evaluationResults) throws Exception {
     for(var result : evaluationResults){
       var metric = result.getEvaluationMetric();
       if(metric.equals(EvaluationMetric.REQUIRED_FIELDS_COMPLETENESS_DISTRIBUTION) ||
@@ -257,7 +291,7 @@ public class EvaluationSheetReportWriter {
           metric.equals(EvaluationMetric.OVERALL_COMPLETENESS_DISTRIBUTION)){
         var data = result.getContentAsMapIntegerInteger();
 
-        var chartFileName = sheetName + metric.getDisplayName().replace("Distribution", "") + ".png";
+        var chartFileName = metadataEntity.getEntityName() + metric.getDisplayName().replace("Distribution", "") + ".png";
         var chartFilePath = chartPath.resolve(chartFileName);
         var fieldCategory = metric.getDisplayName().split(" ")[0];
         var chart = generateHistogramChart(rConnection, data, chartFilePath.toString(), fieldCategory);
@@ -284,9 +318,5 @@ public class EvaluationSheetReportWriter {
     boldFont.setBold(true);
     boldStyle.setFont(boldFont);
     return boldStyle;
-  }
-
-  public void setWorkbook(Workbook workbook) {
-    this.workbook = workbook;
   }
 }

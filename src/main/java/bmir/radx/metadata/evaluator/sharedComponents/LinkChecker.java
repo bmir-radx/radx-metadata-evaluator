@@ -42,7 +42,8 @@ public class LinkChecker {
         .build();
   }
 
-  public URLCount checkJson(String fileName,
+  public URLCount checkJson(String studyPHS,
+                            String fileName,
                             TemplateReporter templateReporter,
                             TemplateInstanceValuesReporter valuesReporter,
                             List<JsonValidationResult> validationResults){
@@ -57,7 +58,7 @@ public class LinkChecker {
         var uri = fieldEntry.getValue().jsonLdId();
         if(uri.isPresent()){
           var uriString = uri.get().toString();
-          updateUnresolvableUrlResult(uriString, fileName, path, urlCount, validationResults);
+          updateUnresolvableUrlResult(studyPHS, uriString, fileName, path, urlCount, validationResults);
         }
       }
     }
@@ -68,7 +69,7 @@ public class LinkChecker {
       var path = avArtifact.specificationPath();
       if(value.isPresent() && isValidURL(value.get())){
         urlCount.incrementTotalURL();
-        updateUnresolvableUrlResult(value.get(), fileName, path, urlCount, validationResults);
+        updateUnresolvableUrlResult(studyPHS, value.get(), fileName, path, urlCount, validationResults);
       }
     }
 
@@ -243,11 +244,12 @@ public class LinkChecker {
     }
   }
 
-  private void updateUnresolvableUrlResult(String uriString, String fileName, String path, URLCount urlCount, List<JsonValidationResult> validationResults) {
+  private void updateUnresolvableUrlResult(String studyPHS, String uriString, String fileName, String path, URLCount urlCount, List<JsonValidationResult> validationResults) {
     if (!isResolvable(uriString)) {
       urlCount.incrementUnresolvableURL();
       validationResults.add(
           new JsonValidationResult(
+              studyPHS,
               fileName,
               path,
               INVALID_URL,

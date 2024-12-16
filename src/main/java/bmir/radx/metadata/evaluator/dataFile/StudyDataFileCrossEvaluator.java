@@ -9,11 +9,10 @@ import org.springframework.stereotype.Component;
 
 import java.nio.file.Path;
 import java.text.Normalizer;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.INACCURATE_FIELD;
+import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.ACCURACY;
 
 @Component
 public class StudyDataFileCrossEvaluator {
@@ -103,7 +102,7 @@ public class StudyDataFileCrossEvaluator {
       var pointer = getPointer(element, field);
       var errorMessage = getErrorMessage(field, dataFileMetadata);
       validationSummary.addInvalidMetadata(dataFileName);
-      validationSummary.updateValidationResult(new JsonValidationResult(studyPhs, dataFileName, pointer, INACCURATE_FIELD, errorMessage, studyMetadata));
+      validationSummary.updateValidationResult(new JsonValidationResult(studyPhs, dataFileName, pointer, ACCURACY, errorMessage, studyMetadata, dataFileMetadata));
     }
   }
 

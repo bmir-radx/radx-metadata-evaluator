@@ -10,15 +10,17 @@ public record SpreadsheetValidationResult(IssueTypeMapping.IssueType issueType,
                                           String repairSuggestion,
                                           Object value,
                                           String uuid,
-                                          IssueLevel issueLevel) implements ValidationResult {
+                                          IssueLevel issueLevel,
+                                          String errorMessage) implements ValidationResult {
   // Constructor with default `uuid` and `issueLevel`
   public SpreadsheetValidationResult(IssueTypeMapping.IssueType issueType,
                                      String column,
                                      int row,
                                      String phsNumber,
                                      String repairSuggestion,
-                                     Object value) {
-    this(issueType, column, row, phsNumber, repairSuggestion, value, generateDefaultUUID(), IssueLevel.ERROR);
+                                     Object value,
+                                     String errorMessage) {
+    this(issueType, column, row, phsNumber, repairSuggestion, value, generateDefaultUUID(), IssueLevel.ERROR, errorMessage);
   }
 
   // Constructor with specified `issueLevel`, default `uuid`
@@ -28,8 +30,9 @@ public record SpreadsheetValidationResult(IssueTypeMapping.IssueType issueType,
                                      String phsNumber,
                                      String repairSuggestion,
                                      Object value,
-                                     IssueLevel issueLevel) {
-    this(issueType, column, row, phsNumber, repairSuggestion, value, generateDefaultUUID(), issueLevel);
+                                     IssueLevel issueLevel,
+                                     String errorMessage) {
+    this(issueType, column, row, phsNumber, repairSuggestion, value, generateDefaultUUID(), issueLevel, errorMessage);
   }
 
   private static String generateDefaultUUID() {

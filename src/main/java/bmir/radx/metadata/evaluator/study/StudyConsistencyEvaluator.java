@@ -11,7 +11,8 @@ import java.util.function.Consumer;
 
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.CONSISTENCY;
 import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
-import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.INCONSISTENT_FIELD;
+import static bmir.radx.metadata.evaluator.HeaderName.MULTI_CENTER_STUDY;
+import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.INCONSISTENCY;
 
 @Component
 public class StudyConsistencyEvaluator {
@@ -23,12 +24,14 @@ public class StudyConsistencyEvaluator {
         inconsistentMultiSitesRows.add(row.studyPHS());
         validationSummary.addInvalidMetadata(row.studyPHS());
         validationResults.add(
-            new SpreadsheetValidationResult(INCONSISTENT_FIELD,
-                "MULTI-CENTER STUDY?",
+            new SpreadsheetValidationResult(INCONSISTENCY,
+                MULTI_CENTER_STUDY.getHeaderName(),
                 row.rowNumber(),
                 row.studyPHS(),
-                "",
-                "MULTI-CENTER STUDY?" + row.multiCenterStudy() + "; MULTI-CENTER SITES:" + row.multiCenterSites())
+                getSuggestion(row.multiCenterSites()),
+                row.multiCenterStudy(),
+                "Multiple study sites are provided"
+                )
         );
       }
     }
@@ -53,5 +56,13 @@ public class StudyConsistencyEvaluator {
     }
     var lowerCaseSites = sites.toLowerCase();
     return lowerCaseSites.contains("and") || lowerCaseSites.contains(";");
+  }
+
+  private String getSuggestion(String sites){
+    if(isMultiSitesString(sites)){
+      return "Yes";
+    } else{
+      return "No";
+    }
   }
 }

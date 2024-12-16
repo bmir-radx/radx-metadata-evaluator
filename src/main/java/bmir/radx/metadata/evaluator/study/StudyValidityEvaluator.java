@@ -6,6 +6,7 @@ import bmir.radx.metadata.evaluator.util.SpreadsheetUpdater;
 import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
 import edu.stanford.bmir.radx.metadata.validator.lib.LiteralFieldValidators;
 import edu.stanford.bmir.radx.metadata.validator.lib.ValidatorFactory;
+import edu.stanford.bmir.radx.metadata.validator.lib.thirdPartyValidators.TerminologyServerHandler;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,7 +51,10 @@ public class StudyValidityEvaluator {
     spreadsheetUpdater.addMetadataTab(workbook, templateTitle, templateVersion, templateCreatedOn, templateID);
     spreadsheetUpdater.patchMetadata(workbook, metadataFilePath);
 
-    var validator = validatorFactory.createValidator(new LiteralFieldValidators(new HashMap<>()));
+    var validator = validatorFactory.createValidator(
+        new LiteralFieldValidators(new HashMap<>()),
+        new TerminologyServerHandler(null, null)
+    );
     var spreadsheetValidatorResponse = validator.validateSpreadsheet(metadataFilePath.toString());
     var mapping = getRowToPhsMap(rows);
 
@@ -64,7 +68,8 @@ public class StudyValidityEvaluator {
               result.row(),
               phs,
               result.repairSuggestion(),
-              result.value()
+              result.value(),
+              result.errorMessage()
           );
           validationSummary.updateValidationResult(spreadsheetResult);
           validationSummary.addInvalidMetadata(phs);

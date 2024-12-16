@@ -48,9 +48,9 @@ public class EvaluateCommand implements Callable<Integer> {
   private final StudyEvaluator studyEvaluator;
   private final DataFileEvaluator dataFileEvaluator;
   private final EvaluationSheetReportWriter singleEntityReportWriter;
-  private final SummaryReportWriter summaryReportWriter;
+  private final ReportWriter summaryReportWriter;
 
-  public EvaluateCommand(VariableEvaluator variableEvaluator, StudyEvaluator studyEvaluator, DataFileEvaluator dataFileEvaluator, EvaluationSheetReportWriter singleEntityReportWriter, SummaryReportWriter summaryReportWriter) {
+  public EvaluateCommand(VariableEvaluator variableEvaluator, StudyEvaluator studyEvaluator, DataFileEvaluator dataFileEvaluator, EvaluationSheetReportWriter singleEntityReportWriter, ReportWriter summaryReportWriter) {
     this.variableEvaluator = variableEvaluator;
     this.studyEvaluator = studyEvaluator;
     this.dataFileEvaluator = dataFileEvaluator;
@@ -118,7 +118,7 @@ public class EvaluateCommand implements Callable<Integer> {
   private void generateSummaryReport(Map<MetadataEntity, EvaluationReport<? extends ValidationResult>> reports) throws IOException {
     try (var workbook = new XSSFWorkbook();
          var outputStream = getOutputStream(summaryReportName)) {
-        summaryReportWriter.writeSummaryReport(study, datafile, workbook, reports);
+        summaryReportWriter.writeReport(workbook, reports);
 
       workbook.write(outputStream);
     }

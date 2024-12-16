@@ -25,19 +25,22 @@ public class StudyEvaluator implements Evaluator<SpreadsheetValidationResult> {
   private final StudyValidityEvaluator studyValidityEvaluator;
   private final StudyAccessibilityEvaluator studyAccessibilityEvaluator;
   private final StudyUniquenessEvaluator uniquenessEvaluator;
+  private final StudyGrammarChecker grammarChecker;
 
   public StudyEvaluator(StudyCompletenessEvaluator completenessEvaluator,
                         StudyConsistencyEvaluator consistencyEvaluator,
                         StudyAccuracyEvaluator accuracyEvaluator,
                         StudyValidityEvaluator studyValidityEvaluator,
                         StudyAccessibilityEvaluator studyAccessibilityEvaluator,
-                        StudyUniquenessEvaluator uniquenessEvaluator) {
+                        StudyUniquenessEvaluator uniquenessEvaluator,
+                        StudyGrammarChecker grammarChecker) {
     this.completenessEvaluator = completenessEvaluator;
     this.consistencyEvaluator = consistencyEvaluator;
     this.accuracyEvaluator = accuracyEvaluator;
     this.studyValidityEvaluator = studyValidityEvaluator;
     this.studyAccessibilityEvaluator = studyAccessibilityEvaluator;
     this.uniquenessEvaluator = uniquenessEvaluator;
+    this.grammarChecker = grammarChecker;
   }
 
   public EvaluationReport<SpreadsheetValidationResult> evaluate(Path... filePaths) {
@@ -56,7 +59,7 @@ public class StudyEvaluator implements Evaluator<SpreadsheetValidationResult> {
       completenessEvaluator.evaluate(studyMetadataRows, consumer);
 
       logger.info("Start to check links resolvability of study metadata spreadsheet");
-      studyAccessibilityEvaluator.evaluate(studyMetadataRows, consumer, validationSummary);
+//      studyAccessibilityEvaluator.evaluate(studyMetadataRows, consumer, validationSummary);
 
       logger.info("Start to check accuracy of study metadata spreadsheet");
       accuracyEvaluator.evaluate(studyMetadataRows, consumer, validationSummary);
@@ -68,7 +71,7 @@ public class StudyEvaluator implements Evaluator<SpreadsheetValidationResult> {
       uniquenessEvaluator.evaluate(studyMetadataRows, consumer, validationSummary);
 
       logger.info("Start to check validity of study metadata spreadsheet");
-      studyValidityEvaluator.evaluate(metadataFilePath, studyMetadataRows, consumer, validationSummary);
+//      studyValidityEvaluator.evaluate(metadataFilePath, studyMetadataRows, consumer, validationSummary);
 
       return new EvaluationReport<>(evaluationResults, validationSummary.getValidationResults());
     } catch (IOException e) {

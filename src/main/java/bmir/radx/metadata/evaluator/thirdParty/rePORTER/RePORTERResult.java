@@ -1,4 +1,4 @@
-package bmir.radx.metadata.evaluator.thirdParty.RePORTER;
+package bmir.radx.metadata.evaluator.thirdParty.rePORTER;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

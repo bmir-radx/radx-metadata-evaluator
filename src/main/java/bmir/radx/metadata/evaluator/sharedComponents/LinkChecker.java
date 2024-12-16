@@ -4,13 +4,11 @@ import bmir.radx.metadata.evaluator.dataFile.FieldsCollector;
 import bmir.radx.metadata.evaluator.result.JsonValidationResult;
 import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
 import bmir.radx.metadata.evaluator.study.StudyMetadataRow;
-import bmir.radx.metadata.evaluator.util.IssueTypeMapping;
 import bmir.radx.metadata.evaluator.util.URLCount;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import edu.stanford.bmir.radx.metadata.validator.lib.FieldValues;
 import edu.stanford.bmir.radx.metadata.validator.lib.TemplateInstanceValuesReporter;
-import edu.stanford.bmir.radx.metadata.validator.lib.ValidationName;
 import org.metadatacenter.artifacts.model.core.TemplateSchemaArtifact;
 import org.metadatacenter.artifacts.model.core.fields.constraints.ValueConstraints;
 import org.metadatacenter.artifacts.model.visitors.TemplateReporter;
@@ -23,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 import static bmir.radx.metadata.evaluator.study.FieldNameStandardizer.getStandardizedMap;
 import static bmir.radx.metadata.evaluator.study.FieldNameStandardizer.standardizeFieldName;
-import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.INVALID_URL;
+import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.ACCESSIBILITY;
 
 @Component
 public class LinkChecker {
@@ -33,6 +31,7 @@ public class LinkChecker {
   private static final int BASE_BACKOFF = 500;        // Initial backoff time
   private final Cache<String, Boolean> urlStatusCache; // URL cache
   private final FieldsCollector fieldsCollector;
+  private final String errorMessage = "Invalid URL";
 
   public LinkChecker(FieldsCollector fieldsCollector) {
     this.fieldsCollector = fieldsCollector;
@@ -138,7 +137,7 @@ public class LinkChecker {
       if (!resolvable) {
         urlCount.incrementUnresolvableURL();
         //Don't add this validation result because spreadsheet validator already handle this type of validation
-        var result = new SpreadsheetValidationResult(INVALID_URL, fieldName, rowNumber, phs, null, url);
+        var result = new SpreadsheetValidationResult(ACCESSIBILITY, fieldName, rowNumber, phs, null, url, errorMessage);
         validationResults.add(result);
       } else {
         urlCount.incrementResolvableURL();
@@ -252,9 +251,10 @@ public class LinkChecker {
               studyPHS,
               fileName,
               path,
-              INVALID_URL,
+              ACCESSIBILITY,
               "Invalid URL",
-              null)
+              null,
+              uriString)
       );
     } else{
       urlCount.incrementResolvableURL();

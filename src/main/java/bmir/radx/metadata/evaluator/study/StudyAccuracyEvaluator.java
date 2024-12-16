@@ -1,12 +1,12 @@
 package bmir.radx.metadata.evaluator.study;
 
+import bmir.radx.metadata.evaluator.HeaderName;
 import bmir.radx.metadata.evaluator.IssueLevel;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
 import bmir.radx.metadata.evaluator.result.ValidationSummary;
-import bmir.radx.metadata.evaluator.thirdParty.RePORTER.RePORTERService;
+import bmir.radx.metadata.evaluator.thirdParty.rePORTER.RePORTERService;
 import bmir.radx.metadata.evaluator.util.IssueTypeMapping;
-import ch.qos.logback.core.encoder.JsonEscapeUtil;
 import com.tupilabs.human_name_parser.HumanNameParserBuilder;
 import org.springframework.stereotype.Component;
 
@@ -74,7 +74,8 @@ public class StudyAccuracyEvaluator {
   private void checkCTLinks(StudyMetadataRow row, ValidationSummary<SpreadsheetValidationResult> validationSummary){
     var incorrectCtLinks = getIncorrectCtLinks();
     if(incorrectCtLinks.contains(row.studyPHS())){
-      updateValidationSummary(row.rowNumber(), row.studyPHS(), CLINICALTRIALS_GOV_URL.getHeaderName(), row.clinicalTrialsGovUrl(), null, validationSummary, IssueLevel.ERROR);
+      String errorMessage = getErrorMessage(CLINICALTRIALS_GOV_URL);
+      updateValidationSummary(row.rowNumber(), row.studyPHS(), CLINICALTRIALS_GOV_URL.getHeaderName(), row.clinicalTrialsGovUrl(), null, validationSummary, IssueLevel.ERROR, errorMessage);
     }
   }
 
@@ -97,7 +98,8 @@ public class StudyAccuracyEvaluator {
         var results = response.results();
 
         if (results.isEmpty()) {
-          updateValidationSummary(row.rowNumber(), row.studyPHS(), NIH_GRANT_NUMBER.getHeaderName(), row.nihGrantNumber(), null, validationSummary, IssueLevel.ERROR);
+          String errorMessage = "Incorrect NIH Grant Number";
+          updateValidationSummary(row.rowNumber(), row.studyPHS(), NIH_GRANT_NUMBER.getHeaderName(), row.nihGrantNumber(), null, validationSummary, IssueLevel.ERROR, errorMessage);
           continue;
         } else{
           if (results.size() > 1) {
@@ -125,7 +127,8 @@ public class StudyAccuracyEvaluator {
       //Check Contact PI in the study metadata row is in Contact PI Name set
       var contactPINameProvided = row.contactPiProjectLeader();
       if(contactPINameProvided != null && !contactPINameProvided.isEmpty() && !contactPIFound){
-        updateValidationSummary(row.rowNumber(), row.studyPHS(), CONTACT_PI_PROJECT_LEADER.getHeaderName(), contactPINameProvided, String.join("; ", contactPIName), validationSummary, REVIEW_NEEDED);
+        String errorMessage = getErrorMessage(CONTACT_PI_PROJECT_LEADER);
+        updateValidationSummary(row.rowNumber(), row.studyPHS(), CONTACT_PI_PROJECT_LEADER.getHeaderName(), contactPINameProvided, String.join("; ", contactPIName), validationSummary, REVIEW_NEEDED, errorMessage);
       }
 
       // Check if FOA in the study metadata row is in the FOA set
@@ -141,7 +144,8 @@ public class StudyAccuracyEvaluator {
             .collect(Collectors.toSet());
 
         if (!missingFoaSet.isEmpty()) {
-          updateValidationSummary(row.rowNumber(), row.studyPHS(), FOA_NUMBER.getHeaderName(), foaNumberProvided, String.join("; ", foaSet), validationSummary, IssueLevel.ERROR);
+          String errorMessage = getErrorMessage(FOA_NUMBER);
+          updateValidationSummary(row.rowNumber(), row.studyPHS(), FOA_NUMBER.getHeaderName(), foaNumberProvided, String.join("; ", foaSet), validationSummary, IssueLevel.ERROR, errorMessage);
         }
       }
 
@@ -151,7 +155,8 @@ public class StudyAccuracyEvaluator {
           .map(String::trim)
           .collect(Collectors.toSet());
       if (!nihICProvided.isEmpty() && !rowNIHSet.equals(nihSet)) {
-        updateValidationSummary(row.rowNumber(), row.studyPHS(), NIH_INSTITUTE_OR_CENTER.getHeaderName(), row.nihInstituteOrCenter(), String.join("; ", nihSet), validationSummary, IssueLevel.ERROR);
+        String errorMessage = getErrorMessage(NIH_INSTITUTE_OR_CENTER);
+        updateValidationSummary(row.rowNumber(), row.studyPHS(), NIH_INSTITUTE_OR_CENTER.getHeaderName(), row.nihInstituteOrCenter(), String.join("; ", nihSet), validationSummary, IssueLevel.ERROR, errorMessage);
       }
     }
   }
@@ -175,16 +180,21 @@ public class StudyAccuracyEvaluator {
         && isIdentical(lastName1.toLowerCase(), lastName2.toLowerCase());
   }
 
-  private void updateValidationSummary(Integer rowNumber, String studyPHS, String columnName, String columnValue, String suggestion, ValidationSummary<SpreadsheetValidationResult> validationSummary, IssueLevel issueLevel){
+  private void updateValidationSummary(Integer rowNumber, String studyPHS, String columnName, String columnValue, String suggestion, ValidationSummary<SpreadsheetValidationResult> validationSummary, IssueLevel issueLevel, String message){
       validationSummary.addInvalidMetadata(studyPHS);
       var result = new SpreadsheetValidationResult(
-          IssueTypeMapping.IssueType.INACCURATE_FIELD,
+          IssueTypeMapping.IssueType.ACCURACY,
           columnName,
           rowNumber,
           studyPHS,
           suggestion,
           columnValue,
-          issueLevel);
+          issueLevel,
+          message);
       validationSummary.updateValidationResult(result);
+  }
+
+  private String getErrorMessage(HeaderName headerName){
+    return "Incorrect " + headerName.getHeaderName();
   }
 }

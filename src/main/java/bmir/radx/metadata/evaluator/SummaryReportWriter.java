@@ -12,7 +12,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 import static bmir.radx.metadata.evaluator.MetadataEntity.*;
-import static bmir.radx.metadata.evaluator.statistics.SummaryReportCalculator.groupByStudyPhsAndEntities;
+import static bmir.radx.metadata.evaluator.statistics.SummaryReportCalculator.groupByStudyPhsAndIssueTypes;
 
 
 @Component
@@ -29,14 +29,8 @@ public class SummaryReportWriter {
   /***
    * {
    *   "study phs992": {
-   *     "study": {
-   *       "issueType1": ["uuid1", "uuid2"],
-   *       "issueType2": ["uuid4"]
-   *     },
-   *     "data file": {
-   *       "issueType1": ["uuid3"]
-   *     }
-   *   },
+   *     "study": [spreadsheetIssue1, spreadsheetIssue2],
+   *     "data file": [JsonIssue1, JsonIssue2],
    *   "study phs304": {
    *     ...
    *   }
@@ -45,7 +39,7 @@ public class SummaryReportWriter {
   public void writeSummaryReport(Path study, Path datafile, Workbook workbook, Map<MetadataEntity, EvaluationReport<? extends ValidationResult>> reports) throws IOException {
     Sheet sheet = workbook.createSheet(SHEET_NAME);
 
-    var data = groupByStudyPhsAndEntities(reports);
+    var data = groupByStudyPhsAndIssueTypes(reports);
     var studyPhsPool = studyPhsGetter.getStudyPhsPool(study, datafile);
     Map<MetadataEntity, Set<String>> issueTypes =  new HashMap<>();
     for(var entity: MetadataEntity.values()){

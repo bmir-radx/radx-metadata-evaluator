@@ -1,8 +1,8 @@
 package bmir.radx.metadata.evaluator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.metadatacenter.artifacts.model.reader.JsonSchemaArtifactReader;
-import org.metadatacenter.artifacts.model.renderer.JsonSchemaArtifactRenderer;
+import org.metadatacenter.artifacts.model.reader.JsonArtifactReader;
+import org.metadatacenter.artifacts.model.renderer.JsonArtifactRenderer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -14,12 +14,12 @@ public class AppConfig {
   }
 
   @Bean
-  public JsonSchemaArtifactRenderer jsonSchemaArtifactRenderer() {
-    return new JsonSchemaArtifactRenderer();
+  public JsonArtifactRenderer jsonSchemaArtifactRenderer() {
+    return new JsonArtifactRenderer();
   }
 
   @Bean
-  public JsonSchemaArtifactReader jsonSchemaArtifactReader(){
-    return new JsonSchemaArtifactReader();
+  public JsonArtifactReader jsonSchemaArtifactReader(){
+    return new JsonArtifactReader();
   }
 }

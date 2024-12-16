@@ -3,7 +3,7 @@ package bmir.radx.metadata.evaluator.dataFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.metadatacenter.artifacts.model.core.TemplateInstanceArtifact;
-import org.metadatacenter.artifacts.model.reader.JsonSchemaArtifactReader;
+import org.metadatacenter.artifacts.model.reader.JsonArtifactReader;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -48,7 +48,7 @@ public class DataFileMetadataReader {
   private TemplateInstanceArtifact processSingleFile(Path filePath){
     try {
       var instanceNode = mapper.readTree(Files.readString(filePath));
-      var jsonSchemaArtifactReader = new JsonSchemaArtifactReader();
+      var jsonSchemaArtifactReader = new JsonArtifactReader();
       return jsonSchemaArtifactReader.readTemplateInstanceArtifact((ObjectNode) instanceNode);
     } catch (IOException e) {
       throw new RuntimeException("Error read file " + filePath  + ": " + e.getMessage());

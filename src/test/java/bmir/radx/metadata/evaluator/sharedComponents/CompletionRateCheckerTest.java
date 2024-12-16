@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.metadatacenter.artifacts.model.reader.JsonSchemaArtifactReader;
+import org.metadatacenter.artifacts.model.reader.JsonArtifactReader;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class CompletionRateCheckerTest {
   private ObjectMapper objectMapper;
   private FieldsCollector fieldsCollector;
-  private JsonSchemaArtifactReader jsonSchemaArtifactReader;
+  private JsonArtifactReader jsonSchemaArtifactReader;
   private CompletionRateChecker completionRateChecker;
   private final String fileName = "StudyTemplate.json";
 
@@ -24,7 +24,7 @@ public class CompletionRateCheckerTest {
   void setUp(){
     objectMapper = new ObjectMapper();
     fieldsCollector = new FieldsCollector();
-    jsonSchemaArtifactReader = new JsonSchemaArtifactReader();
+    jsonSchemaArtifactReader = new JsonArtifactReader();
     completionRateChecker = new CompletionRateChecker(fieldsCollector);
   }
 

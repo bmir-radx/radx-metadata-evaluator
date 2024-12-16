@@ -16,7 +16,7 @@ import java.util.function.Consumer;
 
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.CONSISTENCY;
 import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
-import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.INCONSISTENT_FIELD;
+import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.INCONSISTENCY;
 
 @Component
 public class DataFileConsistencyEvaluator {
@@ -120,7 +120,9 @@ public class DataFileConsistencyEvaluator {
         if(!isCorrectName(parsedName, providedName)){
             var pointer = getPointer(i, elementName, fieldName);
             var errorMessage = getErrorMessage(fullName, providedName.orElse(null), fieldName);
-            validationSummary.updateValidationResult(new JsonValidationResult(studyPhs, fileName, pointer, INCONSISTENT_FIELD, errorMessage, parsedName.orElse(null)));
+            validationSummary.updateValidationResult(
+                new JsonValidationResult(studyPhs, fileName, pointer, INCONSISTENCY, errorMessage, parsedName.orElse(null), providedName.get())
+            );
         }
     }
 
@@ -182,6 +184,6 @@ public class DataFileConsistencyEvaluator {
                 field;
     }
     private String getErrorMessage(String fullName, String providedName, String filed){
-        return filed + " [" + providedName + "] is incorrect for the provided full name: [" + fullName + "]";
+        return filed + " [" + providedName + "] is inconsistent with the provided full name: [" + fullName + "]";
     }
 }

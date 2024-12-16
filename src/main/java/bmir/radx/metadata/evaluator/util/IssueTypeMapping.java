@@ -18,13 +18,13 @@ public class IssueTypeMapping {
         CARDINALITY_ISSUE("Cardinality Issue"),
         LITERAL_FIELD_ISSUE("Literal Field Issue"),
         UNKNOWN_ISSUE("Unknown Issue"),
-        INACCURATE_FIELD("Inaccurate Field"),
-        INCONSISTENT_FIELD("Inconsistent Field"),
-        DUPLICATE_RECORD("Duplicate Record"),
+        ACCURACY("Accuracy"),
+        INCONSISTENCY("Consistency"),
+        UNIQUENESS("Uniqueness"),
         INVALID_SCHEMA_ID("Invalid Schema ID"),
-        NON_STANFORD_TERM("Non-Stanford Term"),
+        CONTROLLED_VOCABULARY("Controlled Vocabulary"),
         INVALID_VALUE_ENCODING("Invalid Value Encoding"),
-        INVALID_URL("Invalid URL");
+        ACCESSIBILITY("Accessibility");
 
         private final String name;
 
@@ -59,12 +59,12 @@ public class IssueTypeMapping {
         stringToIssueTypeMap.put("numberOutOfRange", IssueType.CONSTRAINT_VIOLATION);
         stringToIssueTypeMap.put("invalidSchemaId", IssueType.INVALID_SCHEMA_ID);
         stringToIssueTypeMap.put("notNumberType", IssueType.CONSTRAINT_VIOLATION);
-        stringToIssueTypeMap.put("notStanfordTerm", IssueType.NON_STANFORD_TERM);
+        stringToIssueTypeMap.put("notStanfordTerm", IssueType.CONTROLLED_VOCABULARY);
         stringToIssueTypeMap.put("missingRequired", IssueType.MISSING_REQUIRED);
         stringToIssueTypeMap.put("invalidValueFormat", IssueType.CONSTRAINT_VIOLATION);
         stringToIssueTypeMap.put("notStringType", IssueType.CONSTRAINT_VIOLATION);
         stringToIssueTypeMap.put("invalidValueEncoding", IssueType.INVALID_VALUE_ENCODING);
-        stringToIssueTypeMap.put("invalidUrl", IssueType.INVALID_URL);
+        stringToIssueTypeMap.put("invalidUrl", IssueType.ACCESSIBILITY);
     }
 
     public static IssueType getIssueType(ValidationName validationName) {

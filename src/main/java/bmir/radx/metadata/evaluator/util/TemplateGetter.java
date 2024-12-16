@@ -3,7 +3,7 @@ package bmir.radx.metadata.evaluator.util;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.metadatacenter.artifacts.model.core.TemplateSchemaArtifact;
-import org.metadatacenter.artifacts.model.reader.JsonSchemaArtifactReader;
+import org.metadatacenter.artifacts.model.reader.JsonArtifactReader;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -35,7 +35,7 @@ public class TemplateGetter {
   }
 
   private TemplateSchemaArtifact getTemplate(String fileName) {
-    var jsonSchemaArtifactReader = new JsonSchemaArtifactReader();
+    var jsonSchemaArtifactReader = new JsonArtifactReader();
     try (InputStream inputStream = TemplateGetter.class.getClassLoader().getResourceAsStream(fileName)) {
       var templateNode = objectMapper.readTree(inputStream);
       return jsonSchemaArtifactReader.readTemplateSchemaArtifact((ObjectNode) templateNode);

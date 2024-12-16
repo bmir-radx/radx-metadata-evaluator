@@ -10,15 +10,17 @@ public record JsonValidationResult(String studyPhs,
                                    String errorMessage,
                                    String suggestion,
                                    String uuid,
-                                   IssueLevel issueLevel) implements ValidationResult {
+                                   IssueLevel issueLevel,
+                                   String value) implements ValidationResult {
   // Constructor with default `uuid` and `issueLevel`
   public JsonValidationResult(String studyPhs,
                               String fileName,
                               String pointer,
                               IssueTypeMapping.IssueType issueType,
                               String errorMessage,
-                              String suggestion) {
-    this(studyPhs, fileName, pointer, issueType, errorMessage, suggestion, generateDefaultUUID(), IssueLevel.ERROR);
+                              String suggestion,
+                              String value) {
+    this(studyPhs, fileName, pointer, issueType, errorMessage, suggestion, generateDefaultUUID(), IssueLevel.ERROR, value);
   }
 
   // Constructor with specified `issueLevel`, default `uuid`
@@ -28,8 +30,9 @@ public record JsonValidationResult(String studyPhs,
                               IssueTypeMapping.IssueType issueType,
                               String errorMessage,
                               String suggestion,
-                              IssueLevel issueLevel) {
-    this(studyPhs, fileName, pointer, issueType, errorMessage, suggestion, generateDefaultUUID(), issueLevel);
+                              IssueLevel issueLevel,
+                              String value) {
+    this(studyPhs, fileName, pointer, issueType, errorMessage, suggestion, generateDefaultUUID(), issueLevel, value);
   }
 
   private static String generateDefaultUUID() {

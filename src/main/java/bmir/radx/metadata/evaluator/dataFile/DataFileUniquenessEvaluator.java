@@ -3,6 +3,7 @@ package bmir.radx.metadata.evaluator.dataFile;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.result.JsonValidationResult;
 import bmir.radx.metadata.evaluator.result.ValidationSummary;
+import bmir.radx.metadata.evaluator.util.IssueTypeMapping;
 import bmir.radx.metadata.evaluator.util.StudyPhsGetter;
 import org.metadatacenter.artifacts.model.core.InstanceArtifact;
 import org.metadatacenter.artifacts.model.core.TemplateInstanceArtifact;
@@ -14,7 +15,6 @@ import java.util.function.Consumer;
 
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.UNIQUENESS;
 import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
-import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.DUPLICATE_RECORD;
 
 @Component
 public class DataFileUniquenessEvaluator {
@@ -34,14 +34,17 @@ public class DataFileUniquenessEvaluator {
     Set<String> duplicates = new HashSet<>();
     for(var entry: duplicatesMap.entrySet()){
       var paths = entry.getValue();
-      if (paths.size() > 1) { // If have duplicates
+      if (paths.size() > 1) { // If current instance have duplicates
         duplicates.addAll(paths);
         //add to invalid metadata list and update validation results
         validationSummary.addMultiInvalidMetadata(paths);
         var filePath = entry.getKey();
         var fileName = filePath.getFileName().toString();
         var studyPhs = studyPhsGetter.getCleanStudyPhs(templateInstanceArtifacts.get(filePath));
-        validationSummary.updateValidationResult(new JsonValidationResult(studyPhs, fileName,null, DUPLICATE_RECORD, paths.toString(), null));
+        String errorMessage = "Have duplicates: " + paths.toString();
+        validationSummary.updateValidationResult(
+            new JsonValidationResult(studyPhs, fileName,null, IssueTypeMapping.IssueType.UNIQUENESS, errorMessage, null, null)
+        );
       }
     }
 

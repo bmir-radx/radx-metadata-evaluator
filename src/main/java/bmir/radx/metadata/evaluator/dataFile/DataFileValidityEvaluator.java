@@ -3,12 +3,15 @@ package bmir.radx.metadata.evaluator.dataFile;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.result.JsonValidationResult;
 import bmir.radx.metadata.evaluator.result.ValidationSummary;
+import bmir.radx.metadata.evaluator.util.JsonInstanceValueGetter;
 import bmir.radx.metadata.evaluator.util.StudyPhsGetter;
 import bmir.radx.metadata.evaluator.util.TemplateGetter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.stanford.bmir.radx.metadata.validator.lib.*;
+import edu.stanford.bmir.radx.metadata.validator.lib.thirdPartyValidators.TerminologyServerHandler;
 import org.metadatacenter.artifacts.model.core.TemplateInstanceArtifact;
-import org.metadatacenter.artifacts.model.renderer.JsonSchemaArtifactRenderer;
+import org.metadatacenter.artifacts.model.reader.JsonArtifactReader;
+import org.metadatacenter.artifacts.model.renderer.JsonArtifactRenderer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -30,15 +33,14 @@ public class DataFileValidityEvaluator {
   private String tsEndpoint;
   private boolean hasCached = false;
   private final ObjectMapper mapper;
-  private final JsonSchemaArtifactRenderer renderer;
+  private final JsonArtifactRenderer renderer = new JsonArtifactRenderer();
   private final ValidatorFactory validatorFactory;
   private final TemplateGetter templateGetter;
   private final StudyPhsGetter studyPhsGetter;
 
 
-  public DataFileValidityEvaluator(ObjectMapper mapper, JsonSchemaArtifactRenderer renderer, ValidatorFactory validatorFactory, TemplateGetter templateGetter, StudyPhsGetter studyPhsGetter) {
+  public DataFileValidityEvaluator(ObjectMapper mapper, ValidatorFactory validatorFactory, TemplateGetter templateGetter, StudyPhsGetter studyPhsGetter) {
     this.mapper = mapper;
-    this.renderer = renderer;
     this.templateGetter = templateGetter;
     this.validatorFactory = validatorFactory;
     this.studyPhsGetter = studyPhsGetter;
@@ -60,7 +62,7 @@ public class DataFileValidityEvaluator {
       } catch (IOException e) {
         throw new RuntimeException("Unable to read file " + path);
       }
-      if(!isValid(studyPhs, fileName, templateString, instanceString, results)){
+      if(!isValid(studyPhs, fileName, templateString, instanceString, instance.getValue(), results)){
         invalidInstances.add(fileName);
       }
     }
@@ -75,10 +77,9 @@ public class DataFileValidityEvaluator {
 
   }
 
-  public boolean isValid(String studyPhs, String fileName, String templateString, String instanceString, List<JsonValidationResult> results) {
-//    var terminologyServerHandler = getTerminologyServerHandler();
-//    var validator = validatorFactory.createValidator(getLiteralFieldValidatorsComponent(), terminologyServerHandler);
-    var validator = validatorFactory.createValidator(new LiteralFieldValidators(new HashMap<>()));
+  public boolean isValid(String studyPhs, String fileName, String templateString, String instanceString, TemplateInstanceArtifact instanceArtifact, List<JsonValidationResult> results) {
+    var validator = validatorFactory.createValidator(getLiteralFieldValidatorsComponent(), getTerminologyServerHandler());
+//    var validator = validatorFactory.createValidator(new LiteralFieldValidators(new HashMap<>()));
     ValidationReport report;
     try {
 //      if(!hasCached){
@@ -95,14 +96,17 @@ public class DataFileValidityEvaluator {
     for(var result: report.results()){
       if(result.validationLevel().equals(ValidationLevel.ERROR)){
         errorCount += 1;
+        var pointer = result.pointer();
+        var value = JsonInstanceValueGetter.getValue(instanceArtifact, pointer);
         //TODO need to add fileName and suggestion
         errors.add(new JsonValidationResult(
             studyPhs,
             fileName,
-            result.pointer(),
+            pointer,
             getIssueType(result.validationName()),
             result.message(),
-            ""));
+            "",
+            value));
       }
     }
 
@@ -110,9 +114,9 @@ public class DataFileValidityEvaluator {
     return errorCount <= 0;
   }
 
-//  private TerminologyServerHandler getTerminologyServerHandler() {
-//    return new TerminologyServerHandler(cedarApiKey, tsEndpoint);
-//  }
+  private TerminologyServerHandler getTerminologyServerHandler() {
+    return new TerminologyServerHandler(cedarApiKey, tsEndpoint);
+  }
 
   private LiteralFieldValidators getLiteralFieldValidatorsComponent(){
     return new LiteralFieldValidators(new HashMap<>());

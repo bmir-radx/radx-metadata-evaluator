@@ -105,10 +105,6 @@ public class DataFileConsistencyEvaluator {
                 String parsedMiddleName = parser.getMiddle();
                 String parsedGivenName = parsedFirstName + " " + parsedMiddleName;
 
-//                var nameParts = parseFullName(name.get(), element);
-//                var parsedGivenName = nameParts.get(givenNameField);
-//                var parsedFamilyName = nameParts.get(familyNameField);
-
                 processIncorrectName(name.get(), Optional.of(parsedFamilyName), familyName, i, studyPhs, fileName, element, familyNameField, validationSummary);
                 processIncorrectName(name.get(), Optional.of(parsedGivenName), givenName, i, studyPhs, fileName, element, givenNameField, validationSummary);
             }

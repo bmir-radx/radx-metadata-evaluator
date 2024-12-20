@@ -7,9 +7,12 @@ import bmir.radx.metadata.evaluator.util.JsonInstanceValueGetter;
 import bmir.radx.metadata.evaluator.util.StudyPhsGetter;
 import bmir.radx.metadata.evaluator.util.TemplateGetter;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import edu.stanford.bmir.radx.metadata.validator.lib.*;
 import edu.stanford.bmir.radx.metadata.validator.lib.thirdPartyValidators.TerminologyServerHandler;
 import org.metadatacenter.artifacts.model.core.TemplateInstanceArtifact;
+import org.metadatacenter.artifacts.model.core.fields.constraints.ControlledTermValueConstraints;
 import org.metadatacenter.artifacts.model.reader.JsonArtifactReader;
 import org.metadatacenter.artifacts.model.renderer.JsonArtifactRenderer;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.VALIDITY;
@@ -37,13 +41,17 @@ public class DataFileValidityEvaluator {
   private final ValidatorFactory validatorFactory;
   private final TemplateGetter templateGetter;
   private final StudyPhsGetter studyPhsGetter;
-
+  private final Cache<ControlledTermValueConstraints, Map<String, String>> cache;
 
   public DataFileValidityEvaluator(ObjectMapper mapper, ValidatorFactory validatorFactory, TemplateGetter templateGetter, StudyPhsGetter studyPhsGetter) {
     this.mapper = mapper;
     this.templateGetter = templateGetter;
     this.validatorFactory = validatorFactory;
     this.studyPhsGetter = studyPhsGetter;
+    this.cache = Caffeine.newBuilder()
+        .expireAfterWrite(10, TimeUnit.MINUTES) // Cache expiration
+        .maximumSize(100) // Maximum cache size
+        .build();
   }
 
   public void evaluate(Map<Path, TemplateInstanceArtifact> templateInstanceArtifacts,
@@ -86,7 +94,7 @@ public class DataFileValidityEvaluator {
 //        Cache.init(templateString, instanceString, terminologyServerHandler);
 //        hasCached = true;
 //      }
-      report = validator.validateInstance(templateString, instanceString);
+      report = validator.validateInstance(templateString, instanceString, cache);
 
     } catch (Exception e) {
       throw new RuntimeException("Error validating data file metadata." + e.getMessage());
@@ -98,7 +106,6 @@ public class DataFileValidityEvaluator {
         errorCount += 1;
         var pointer = result.pointer();
         var value = JsonInstanceValueGetter.getValue(instanceArtifact, pointer);
-        //TODO need to add fileName and suggestion
         errors.add(new JsonValidationResult(
             studyPhs,
             fileName,

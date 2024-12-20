@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 
-import static bmir.radx.metadata.evaluator.HeaderName.CLINICALTRIALS_GOV_URL;
+import static bmir.radx.metadata.evaluator.SpreadsheetHeaders.CLINICALTRIALS_GOV_URL;
 import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.ACCESSIBILITY;
 
 @Component

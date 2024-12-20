@@ -1,6 +1,6 @@
 package bmir.radx.metadata.evaluator.study;
 
-import bmir.radx.metadata.evaluator.HeaderName;
+import bmir.radx.metadata.evaluator.SpreadsheetHeaders;
 import bmir.radx.metadata.evaluator.IssueLevel;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.ACCURACY;
 import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
-import static bmir.radx.metadata.evaluator.HeaderName.*;
+import static bmir.radx.metadata.evaluator.SpreadsheetHeaders.*;
 import static bmir.radx.metadata.evaluator.IssueLevel.REVIEW_NEEDED;
 
 @Component
@@ -63,11 +63,11 @@ public class StudyAccuracyEvaluator {
 
   private Set<String> getIncorrectCtLinks(){
     Set<String> studies = new HashSet<>();
-    studies.add("phs002521");
-    studies.add("phs002584");
-    studies.add("phs002713");
-    studies.add("phs002920");
-    studies.add("phs003359");
+//    studies.add("phs002521");
+//    studies.add("phs002584");
+//    studies.add("phs002713");
+//    studies.add("phs002920");
+//    studies.add("phs003359");
     return studies;
   }
 
@@ -194,7 +194,7 @@ public class StudyAccuracyEvaluator {
       validationSummary.updateValidationResult(result);
   }
 
-  private String getErrorMessage(HeaderName headerName){
-    return "Incorrect " + headerName.getHeaderName();
+  private String getErrorMessage(SpreadsheetHeaders spreadsheetHeaders){
+    return "Incorrect " + spreadsheetHeaders.getHeaderName();
   }
 }

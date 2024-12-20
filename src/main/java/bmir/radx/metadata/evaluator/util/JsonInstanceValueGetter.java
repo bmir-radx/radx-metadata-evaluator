@@ -9,11 +9,13 @@ public class JsonInstanceValueGetter {
     TemplateInstanceValuesReporter valuesReporter = new TemplateInstanceValuesReporter(instance);
     var fieldValue = valuesReporter.getValues().get(fieldPath);
     var value = "";
-    value += fieldValue.jsonLdValue().orElse("");
-    if(fieldValue.jsonLdId().isPresent()){
-      value += "; " + fieldValue.jsonLdId().get().toString();
+    if(fieldValue!=null){
+      value += fieldValue.jsonLdValue().orElse("");
+      if(fieldValue.jsonLdId().isPresent()){
+        value += "; " + fieldValue.jsonLdId().get().toString();
+      }
     }
-    return value;
+    return value.equals("") ? value:null;
   }
 
 }

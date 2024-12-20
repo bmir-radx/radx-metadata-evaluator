@@ -183,7 +183,7 @@ public class EvaluationSheetReportWriter {
     }
 
     //add charts
-    getAndInsertCharts(sheet, report, rootPath);
+//    getAndInsertCharts(sheet, report, rootPath);
   }
 
   private <T extends ValidationResult> void writeIssuePageContent(List<T> validationResults, Sheet sheet) {

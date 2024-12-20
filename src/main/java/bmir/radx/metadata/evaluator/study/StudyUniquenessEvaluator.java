@@ -14,7 +14,7 @@ import java.util.function.Consumer;
 
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.UNIQUENESS;
 import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
-import static bmir.radx.metadata.evaluator.HeaderName.STUDY_PHS;
+import static bmir.radx.metadata.evaluator.SpreadsheetHeaders.STUDY_PHS;
 
 @Component
 public class StudyUniquenessEvaluator {

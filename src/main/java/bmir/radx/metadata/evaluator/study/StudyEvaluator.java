@@ -26,6 +26,7 @@ public class StudyEvaluator implements Evaluator<SpreadsheetValidationResult> {
   private final StudyAccessibilityEvaluator studyAccessibilityEvaluator;
   private final StudyUniquenessEvaluator uniquenessEvaluator;
   private final StudyGrammarChecker grammarChecker;
+  private final StudyCodeListEvaluator codeListEvaluator;
 
   public StudyEvaluator(StudyCompletenessEvaluator completenessEvaluator,
                         StudyConsistencyEvaluator consistencyEvaluator,
@@ -33,7 +34,8 @@ public class StudyEvaluator implements Evaluator<SpreadsheetValidationResult> {
                         StudyValidityEvaluator studyValidityEvaluator,
                         StudyAccessibilityEvaluator studyAccessibilityEvaluator,
                         StudyUniquenessEvaluator uniquenessEvaluator,
-                        StudyGrammarChecker grammarChecker) {
+                        StudyGrammarChecker grammarChecker,
+                        StudyCodeListEvaluator codeListEvaluator) {
     this.completenessEvaluator = completenessEvaluator;
     this.consistencyEvaluator = consistencyEvaluator;
     this.accuracyEvaluator = accuracyEvaluator;
@@ -41,6 +43,7 @@ public class StudyEvaluator implements Evaluator<SpreadsheetValidationResult> {
     this.studyAccessibilityEvaluator = studyAccessibilityEvaluator;
     this.uniquenessEvaluator = uniquenessEvaluator;
     this.grammarChecker = grammarChecker;
+    this.codeListEvaluator = codeListEvaluator;
   }
 
   public EvaluationReport<SpreadsheetValidationResult> evaluate(Path... filePaths) {
@@ -55,23 +58,26 @@ public class StudyEvaluator implements Evaluator<SpreadsheetValidationResult> {
     try {
       var studyMetadataRows = studyMetadataReader.readStudyMetadata(metadataFilePath);
 
-      logger.info("Start to check completeness of study metadata spreadsheet");
-      completenessEvaluator.evaluate(studyMetadataRows, consumer);
-
-      logger.info("Start to check links resolvability of study metadata spreadsheet");
-//      studyAccessibilityEvaluator.evaluate(studyMetadataRows, consumer, validationSummary);
-
-      logger.info("Start to check accuracy of study metadata spreadsheet");
-      accuracyEvaluator.evaluate(studyMetadataRows, consumer, validationSummary);
-
+//      logger.info("Start to check completeness of study metadata spreadsheet");
+//      completenessEvaluator.evaluate(studyMetadataRows, consumer);
+//
+//      logger.info("Start to check links resolvability of study metadata spreadsheet");
+////      studyAccessibilityEvaluator.evaluate(studyMetadataRows, consumer, validationSummary);
+//
+//      logger.info("Start to check accuracy of study metadata spreadsheet");
+//      accuracyEvaluator.evaluate(studyMetadataRows, consumer, validationSummary);
+//
       logger.info("Start to check consistency of study metadata spreadsheet");
       consistencyEvaluator.evaluate(studyMetadataRows, consumer, validationSummary);
-
-      logger.info("Start to check uniqueness of study metadata spreadsheet");
-      uniquenessEvaluator.evaluate(studyMetadataRows, consumer, validationSummary);
-
-      logger.info("Start to check validity of study metadata spreadsheet");
+//
+//      logger.info("Start to check uniqueness of study metadata spreadsheet");
+//      uniquenessEvaluator.evaluate(studyMetadataRows, consumer, validationSummary);
+//
+//      logger.info("Start to check validity of study metadata spreadsheet");
 //      studyValidityEvaluator.evaluate(metadataFilePath, studyMetadataRows, consumer, validationSummary);
+
+      logger.info("Start to check controlled terms of study metadata spreadsheet");
+      codeListEvaluator.check(studyMetadataRows, consumer, validationSummary);
 
       return new EvaluationReport<>(evaluationResults, validationSummary.getValidationResults());
     } catch (IOException e) {

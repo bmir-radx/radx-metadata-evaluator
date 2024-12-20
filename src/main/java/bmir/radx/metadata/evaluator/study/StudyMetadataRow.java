@@ -1,5 +1,6 @@
 package bmir.radx.metadata.evaluator.study;
 
+import bmir.radx.metadata.evaluator.SpreadsheetHeaders;
 import bmir.radx.metadata.evaluator.sharedComponents.MetadataRow;
 
 import java.util.Date;
@@ -13,7 +14,7 @@ public record StudyMetadataRow(
     String description,
     String radxAcknowledgements,
     String nihGrantNumber,
-    String rapidsLink,
+//    String rapidsLink,
     Date studyStartDate,
     Date studyEndDate,
     Date studyReleaseDate,
@@ -22,14 +23,14 @@ public record StudyMetadataRow(
     String foaUrl,
     String contactPiProjectLeader,
     String studyDoi,
-    String cdccProvidedPublicationUrls,
+    String publicationUrls,
     String clinicalTrialsGovUrl,
     String studyWebsiteUrl,
     String studyDesign,
     String dataTypes,
     String studyDomain,
     String nihInstituteOrCenter,
-    Boolean multiCenterStudy,
+    String multiCenterStudy,
     String multiCenterSites,
     String keywords,
     String dataCollectionMethod,
@@ -38,6 +39,14 @@ public record StudyMetadataRow(
     String species,
     String consentDataUseLimitations,
     String studyStatus,
-    Boolean hasDataFiles
+    String hasDataFiles,
+    String diseaseSpecificGroup,
+    String diseaseSpecificRelatedConditions,
+    String healthBiomedGroup,
+    String studyCitation,
+    Double actualStudySize,
+    String studyVersion,
+    String estimatedParticipantRange,
+    Date createdAt
 ) implements MetadataRow {
 }

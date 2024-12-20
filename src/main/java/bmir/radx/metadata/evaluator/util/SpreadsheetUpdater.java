@@ -83,7 +83,7 @@ public class SpreadsheetUpdater {
     saveWorkbookToFile(workbook, outputPath);
   }
 
-  private void saveWorkbookToFile(Workbook workbook, Path outputPath){
+  public void saveWorkbookToFile(Workbook workbook, Path outputPath){
     try (FileOutputStream fos = new FileOutputStream(outputPath.toFile())) {
       workbook.write(fos);
     } catch (IOException e) {

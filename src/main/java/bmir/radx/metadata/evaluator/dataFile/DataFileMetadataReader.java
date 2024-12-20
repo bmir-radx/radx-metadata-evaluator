@@ -7,8 +7,11 @@ import org.metadatacenter.artifacts.model.reader.JsonArtifactReader;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -24,17 +27,27 @@ public class DataFileMetadataReader {
   public Map<Path, TemplateInstanceArtifact> readDataFileMetadata(Path filePath) {
     Map<Path, TemplateInstanceArtifact> artifacts = new HashMap<>();
     if (Files.isDirectory(filePath)) {
-      try (Stream<Path> paths = Files.walk(filePath)) {
-        paths.filter(Files::isRegularFile)
-            .filter(path -> path.toString().endsWith(".json"))
-            .forEach(file -> {
+      try {
+        Files.walkFileTree(filePath, new SimpleFileVisitor<>() {
+          @Override
+          public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+            if (file.toString().endsWith(".json")) {
               var artifact = processSingleFile(file);
               if (artifact != null) {
                 artifacts.put(file, artifact);
               }
-            });
-      } catch (Exception e) {
-        System.err.println("Error processing files " + filePath + ": " + e.getMessage());
+            }
+            return FileVisitResult.CONTINUE;
+          }
+
+          @Override
+          public FileVisitResult visitFileFailed(Path file, IOException exc) {
+            System.err.println("Failed to access file: " + file + " - " + exc.getMessage());
+            return FileVisitResult.CONTINUE;
+          }
+        });
+      } catch (IOException e) {
+        System.err.println("Error processing files in directory " + filePath + ": " + e.getMessage());
       }
     } else {
       var artifact = processSingleFile(filePath);

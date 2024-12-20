@@ -3,12 +3,15 @@ package bmir.radx.metadata.evaluator.result;
 import bmir.radx.metadata.evaluator.MetadataEntity;
 
 import java.time.LocalDate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static bmir.radx.metadata.evaluator.MetadataEntity.DATA_FILE_METADATA;
 import static bmir.radx.metadata.evaluator.MetadataEntity.STUDY_METADATA;
 
 public class IssueDatabase {
-  private static final String STUDY_METADATA_FILE_LOC = "https://github.com/bmir-radx/radx-metadata-evaluation/study-metadata-spreadsheet.xlsx";
+  private static final String STUDY_METADATA_FILE_LOC = "https://github.com/bmir-radx/radx-data-hub-metadata/tree/main/%20Study%20Metadata";
+  private static final String FILE_METADATA_LOC_PREFIX = "https://github.com/bmir-radx/radx-data-hub-metadata/blob/main/Data%20File%20Metadata/metadata_dump_12122024/";
   private static final String EVALUATION_TOOL = "RADx Data Hub Metadata Evaluator";
   public record IssueDatabaseRecord(
       String issueId,
@@ -56,7 +59,7 @@ public class IssueDatabase {
     return new IssueDatabaseRecord(
         s.uuid(),                                 // Issue ID
         s.studyPhs(),                             // PHS
-        s.fileName(),                             // todo: File location in github
+        getFileLoc(s.studyPhs(), s.fileName()),
         "NA",                                    // File location comments
         DATA_FILE_METADATA.getEntityName(),                          // Entity Type
         s.pointer(),                              // Metadata Field
@@ -65,7 +68,7 @@ public class IssueDatabase {
         s.issueType().getName(),                  // Issue Type
         s.errorMessage(),                         // Issue Description
         s.issueLevel().name(),                    // Issue Level
-        s.value(),                                       // todo: get the value. Value (not available in JsonValidationResult)
+        s.value(),
         s.suggestion(),                           // Repair Suggestion
         LocalDate.now(),                          // Evaluation Date
         EVALUATION_TOOL,                          // Issue Creator (example value, modify as needed)
@@ -75,5 +78,14 @@ public class IssueDatabase {
 
   private static int getEndPosition(String value){
     return value.length();
+  }
+
+  private static String getFileLoc(String phs, String fileName){
+    var pattern = Pattern.compile("phs\\d+");
+    var cleanPhs = pattern.matcher(phs);
+    if(!cleanPhs.find()){
+      System.err.println(phs);
+    }
+    return FILE_METADATA_LOC_PREFIX + cleanPhs.group() + "/" + fileName;
   }
 }

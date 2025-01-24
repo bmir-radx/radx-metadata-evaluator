@@ -1,4 +1,3 @@
-# radx-metadata-evaluator
 # RADx Metadata Evaluator
 
 The **RADx Metadata Evaluator** is a tool for evaluating the quality of metadata related to studies and data files. It identifies issues and generates detailed reports to ensure metadata compliance with standards.
@@ -29,7 +28,7 @@ The evaluator requires the following inputs (optional as specified):
 |---------------|----------------------------------------------------------------------------------------------|----------|
 | `--o`         | Path to the output directory where evaluation reports will be generated                      | Yes      |
 | `--s`         | Path to the study metadata spreadsheet                                                       | No       |
-| `--d`         | Path to the data file metadata folder                                                        | No       | |
+| `--d`         | Path to the data file metadata folder                                                        | No       |
 The tool utilizes the spreadsheet validator to validate study metadata (in spreadsheet format), including aspects such as number type, cardinality, and more. Please ensure the study metadata headers align with the [Study Metadata Template](https://openview.metadatacenter.org/templates/https:%2F%2Frepo.metadatacenter.org%2Ftemplates%2Faf3f6a0d-9f9f-4db2-898d-0a19d2dd0bb6).
 
 ---

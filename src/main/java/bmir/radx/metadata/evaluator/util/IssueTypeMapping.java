@@ -19,12 +19,18 @@ public class IssueTypeMapping {
 //        LITERAL_FIELD_ISSUE("Literal Field Issue"),
         UNKNOWN_ISSUE("Unknown Issue"),
         ACCURACY("Accuracy"),
-        INCONSISTENCY("Consistency"),
+        CONSISTENCY("Consistency"),
+        OVERALL_COMPLETENESS("Overall Completeness"),
+        REQUIRED_COMPLETENESS("Required Fields Completeness"),
+        RECOMMENDED_COMPLETENESS("Recommended Fields Completeness"),
+        OPTIONAL_COMPLETENESS("Optional Fields Completeness"),
         UNIQUENESS("Uniqueness"),
 //        INVALID_SCHEMA_ID("Invalid Schema ID"),
         CONTROLLED_VOCABULARY_CONSISTENCY("Controlled Vocabulary Consistency"),
 //        INVALID_VALUE_ENCODING("Invalid Value Encoding"),
-        ACCESSIBILITY("Accessibility");
+        ACCESSIBILITY("Accessibility"),
+        STRUCTURAL_QUALITY("Structural Quality"),
+        LINGUISTIC_QUALITY("Linguistic Quality");
 
         private final String name;
 
@@ -93,5 +99,17 @@ public class IssueTypeMapping {
 
     public static IssueType getIssueType(String issueTypeString) {
         return stringToIssueTypeMap.getOrDefault(issueTypeString, IssueType.UNKNOWN_ISSUE);
+    }
+
+    public static IssueType getIssueType(FieldCategory fieldCategory){
+      if (fieldCategory.equals(FieldCategory.OVERALL)){
+        return IssueType.OVERALL_COMPLETENESS;
+      } else if (fieldCategory.equals(FieldCategory.REQUIRED)) {
+        return IssueType.REQUIRED_COMPLETENESS;
+      } else if (fieldCategory.equals(FieldCategory.RECOMMENDED)) {
+        return IssueType.RECOMMENDED_COMPLETENESS;
+      } else {
+        return IssueType.OPTIONAL_COMPLETENESS;
+      }
     }
 }

@@ -82,9 +82,6 @@ public class StudyValidityEvaluator {
     //Step 2: Manually handle invalid study website urls
     specificHandleStudyUrls(rows, validationSummary);
 
-    //Step 3: Check cardinality
-
-
     var invalidStudyRows = validationSummary.getInvalidMetadata();
     int totalStudies = rows.size();
     int invalidStudies = invalidStudyRows.size();
@@ -125,7 +122,7 @@ public class StudyValidityEvaluator {
   }
 
   private boolean isStudyWebsiteUrlIssue(edu.stanford.bmir.radx.metadata.validator.lib.thirdPartyValidators.SpreadsheetValidationResult result){
-    return (result.row() == 83 || result.row() == 119) && result.column().equals(StudyTemplateFields.STUDY_WEBSITE_URLS.getFieldTitle());
+    return (result.row() == 84 || result.row() == 121) && result.column().equals(StudyTemplateFields.STUDY_WEBSITE_URLS.getFieldTitle());
   }
 
   private void addResultToIssueDatabase(String phs, edu.stanford.bmir.radx.metadata.validator.lib.thirdPartyValidators.SpreadsheetValidationResult result, ValidationSummary<SpreadsheetValidationResult> validationSummary){
@@ -150,7 +147,7 @@ public class StudyValidityEvaluator {
         row.studyPHS(),
         "Remove text fragments from url",
         value,
-        IssueLevel.REVIEW_NEEDED,
+        IssueLevel.ERROR,
         "The provided URL contains a text fragment."
     );
     validationSummary.updateValidationResult(spreadsheetResult);

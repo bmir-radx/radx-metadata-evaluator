@@ -39,8 +39,10 @@ public class EvaluateCommand implements Callable<Integer> {
   private Path variable;
 
   @Option(names = "--s", description = "Path to the study metadata spreadsheet.")
-
   private Path study;
+
+  @Option(names = "--e", description = "Path to the study explorer results csv.")
+  private Path studyExplorer;
 
   private final String issueDetailsReportName = "Evaluation Report";
   private final String summaryReportName = "RADx Metadata Evaluation Report Summary";
@@ -81,8 +83,13 @@ public class EvaluateCommand implements Callable<Integer> {
       if(!Files.exists(study)){
         throw new FileNotFoundException("Study Metadata File not found: " + study);
       }
-      var report = studyEvaluator.evaluate(study);
-      reports.put(STUDY_METADATA, report);
+      if(studyExplorer != null){
+        var report = studyEvaluator.evaluate(study, studyExplorer);
+        reports.put(STUDY_METADATA, report);
+      } else{
+        var report = studyEvaluator.evaluate(study);
+        reports.put(STUDY_METADATA, report);
+      }
     }
 
     if (datafile != null){
@@ -118,8 +125,8 @@ public class EvaluateCommand implements Callable<Integer> {
   private void generateSummaryReport(Map<MetadataEntity, EvaluationReport<? extends ValidationResult>> reports) throws IOException {
     try (var workbook = new XSSFWorkbook();
          var outputStream = getOutputStream(summaryReportName)) {
-        summaryReportWriter.writeReport(workbook, reports);
-
+        summaryReportWriter.writeIssuesDatabase(workbook, reports);
+        summaryReportWriter.writeMetadataInstanceSummary(workbook, reports);
       workbook.write(outputStream);
     }
   }

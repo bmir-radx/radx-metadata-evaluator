@@ -3,16 +3,17 @@ package bmir.radx.metadata.evaluator.study;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
 import bmir.radx.metadata.evaluator.result.ValidationSummary;
+import bmir.radx.metadata.evaluator.util.IssueTypeMapping;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.CONSISTENCY;
 import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
 import static bmir.radx.metadata.evaluator.SpreadsheetHeaders.*;
-import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.INCONSISTENCY;
 
 @Component
 public class StudyConsistencyEvaluator {
@@ -34,6 +35,8 @@ public class StudyConsistencyEvaluator {
         String suggestion = getRangeSuggestion(row.estimatedCohortSize());
         validationResults.add(getResult(row, ESTIMATED_PARTICIPANT_RANGE.getHeaderName(), suggestion, errorMessage));
       }
+
+//      checkAcknowledgementStatement(row, validationSummary);
     }
     int totalStudies = rows.size();
     int inconsistentStudies = inconsistentRows.size();
@@ -100,8 +103,109 @@ public class StudyConsistencyEvaluator {
     return true;
   }
 
+  private void checkAcknowledgementStatement(StudyMetadataRow row, ValidationSummary<SpreadsheetValidationResult> validationSummary) {
+    String regex = "This study was supported through funding, ([-\\w ]+), (?:for|from) the ([ \\w()]+) as part of the (RADx[- \\w]+) program\\.[^\\n]*?\\s+" +
+        "(?:Approved users should acknowledge the provision of data access by dbGaP for accession (phs[\\w]+)\\.v1\\.p1,? and " +
+        "(?:the NIH RADx Data Hub|RAPIDS \\((https://rapids\\.ll\\.mit\\.edu/10\\.57895/[-a-z\\d]+)\\))\\. )?" +
+        "Approved users should also acknowledge the specific version\\(s\\) of the dataset\\(s\\) obtained from (?:the NIH RADx Data Hub|RAPIDS)\\.";
+
+    Pattern pattern = Pattern.compile(regex);
+    Matcher matcher = pattern.matcher(row.radxAcknowledgements());
+
+    if (matcher.find()) {
+      // Extract groups
+      String fundingSources = matcher.group(1);
+      String institutesStatement = matcher.group(2);
+      String radxProgram = matcher.group(3);
+      String dbGapAccession = matcher.group(4);
+      String rapidsLink = matcher.group(5);
+
+      // heck NIH Grant or Contract Numbers
+      List<String> grantStatementList = Arrays.asList(fundingSources.split(" and "));
+      List<String> grantList = Arrays.asList(row.nihGrantNumber().split(","));
+      Set<String> grantSet = new HashSet<>(grantList);
+      Set<String> grantStatementSet = new HashSet<>(grantStatementList);
+
+      if (!grantSet.equals(grantStatementSet)) {
+        validationSummary.updateValidationResult(
+            new SpreadsheetValidationResult(
+                IssueTypeMapping.IssueType.ACCURACY,
+                RADX_ACKNOWLEDGEMENTS.getHeaderName(),
+                row.rowNumber(),
+                row.studyPHS(),
+                grantSet.toString(),
+                row.radxAcknowledgements(),
+                String.format("NIH Grant or Contract Number(s) field (%s) does not match Acknowledgement Statement (%s)",
+                    String.join(", ", grantList), String.join(", ", grantStatementList))
+            )
+        );
+      }
+
+      // Check NIH Institute/Center
+      List<String> centerStatementList = new ArrayList<>();
+      Matcher centerMatcher = Pattern.compile("\\(([A-Z]+)\\)").matcher(institutesStatement);
+      while (centerMatcher.find()) {
+        centerStatementList.add(centerMatcher.group(1));
+      }
+      List<String> centerList = Arrays.asList(row.nihInstituteOrCenter().split(","));
+      Set<String> centerSet = new HashSet<>();
+      for (String center : centerList) {
+        centerSet.add(center.trim());
+      }
+      Set<String> centerStatementSet = new HashSet<>();
+      for (String center : centerStatementList) {
+        centerStatementSet.add(center.trim());
+      }
+
+      if (!centerStatementSet.isEmpty() && !centerSet.equals(centerStatementSet)) {
+        validationSummary.updateValidationResult(
+            new SpreadsheetValidationResult(
+                IssueTypeMapping.IssueType.ACCURACY,
+                RADX_ACKNOWLEDGEMENTS.getHeaderName(),
+                row.rowNumber(),
+                row.studyPHS(),
+                centerSet.toString(),
+                row.radxAcknowledgements(),
+                String.format("NIH Institute/Center field (%s) does not match Acknowledgement Statement (%s)",
+                    String.join(", ", centerList), String.join(", ", centerStatementList))
+            )
+        );
+      }
+
+      // Check RADx Data Program
+      if(radxProgram!= null && !row.studyProgram().equals(radxProgram.trim())){
+        validationSummary.updateValidationResult(
+            new SpreadsheetValidationResult(
+                IssueTypeMapping.IssueType.ACCURACY,
+                RADX_ACKNOWLEDGEMENTS.getHeaderName(),
+                row.rowNumber(),
+                row.studyPHS(),
+                row.studyProgram(),
+                row.radxAcknowledgements(),
+                String.format("RADx Data Program field (%s) does not match Acknowledgement Statement (%s)",
+                    row.studyPHS(), radxProgram))
+            );
+      }
+
+      // Check study phs
+      if(dbGapAccession!= null && !row.studyPHS().equals(dbGapAccession.trim())){
+        validationSummary.updateValidationResult(
+            new SpreadsheetValidationResult(
+                IssueTypeMapping.IssueType.ACCURACY,
+                RADX_ACKNOWLEDGEMENTS.getHeaderName(),
+                row.rowNumber(),
+                row.studyPHS(),
+                row.studyPHS(),
+                row.radxAcknowledgements(),
+                String.format("dbGaP Study Accession field (%s) does not match Acknowledgement Statement (%s)",
+                    row.studyPHS(), dbGapAccession))
+        );
+      }
+    }
+  }
+
   private SpreadsheetValidationResult getResult(StudyMetadataRow row, String field, String suggestion, String errorMessage){
-    return new SpreadsheetValidationResult(INCONSISTENCY,
+    return new SpreadsheetValidationResult(IssueTypeMapping.IssueType.CONSISTENCY,
         field,
         row.rowNumber(),
         row.studyPHS(),

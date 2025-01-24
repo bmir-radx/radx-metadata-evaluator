@@ -3,8 +3,10 @@ package bmir.radx.metadata.evaluator.dataFile;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.result.JsonValidationResult;
 import bmir.radx.metadata.evaluator.result.ValidationSummary;
+import bmir.radx.metadata.evaluator.util.InstanceArtifactPath;
 import bmir.radx.metadata.evaluator.util.InstanceArtifactValueGetter;
 import bmir.radx.metadata.evaluator.util.IssueTypeMapping;
+import bmir.radx.metadata.evaluator.util.StudyPhsGetter;
 import org.metadatacenter.artifacts.model.core.TemplateInstanceArtifact;
 import org.springframework.stereotype.Component;
 
@@ -16,16 +18,17 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.ACCURACY;
-import static bmir.radx.metadata.evaluator.EvaluationCriterion.CONSISTENCY;
 import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
 
 @Component
 public class DataFileAccuracyEvaluator {
   private static final String titlePath = "/Data File Titles[0]/Title";
   private final StudyDataFileCrossEvaluator studyDataFileCrossEvaluator;
+  private final StudyPhsGetter studyPhsGetter;
 
-  public DataFileAccuracyEvaluator(StudyDataFileCrossEvaluator studyDataFileCrossEvaluator) {
+  public DataFileAccuracyEvaluator(StudyDataFileCrossEvaluator studyDataFileCrossEvaluator, StudyPhsGetter studyPhsGetter) {
     this.studyDataFileCrossEvaluator = studyDataFileCrossEvaluator;
+    this.studyPhsGetter = studyPhsGetter;
   }
 
   public void evaluate(Optional<Path> studyPath,
@@ -34,8 +37,8 @@ public class DataFileAccuracyEvaluator {
                        ValidationSummary<JsonValidationResult> validationSummary){
     Set<String> inaccurateInstances = new HashSet<>();
 
-    //cross-check study metadata vs data file metadata if study path is provided
-    studyPath.ifPresent(path -> studyDataFileCrossEvaluator.evaluate(path, inaccurateInstances, templateInstanceArtifacts, validationSummary));
+//    //cross-check study metadata vs data file metadata if study path is provided
+//    studyPath.ifPresent(path -> studyDataFileCrossEvaluator.evaluate(path, inaccurateInstances, templateInstanceArtifacts, validationSummary));
 
     //check Title is not Study Name
     checkTitle(templateInstanceArtifacts, inaccurateInstances, validationSummary);
@@ -56,7 +59,7 @@ public class DataFileAccuracyEvaluator {
       var path = instanceEntry.getKey();
       var title = InstanceArtifactValueGetter.getTitle(instance);
       var studyName = InstanceArtifactValueGetter.getStudyName(instance);
-      var phs = InstanceArtifactValueGetter.getStudyPhs(instance);
+      var phs = studyPhsGetter.getCleanStudyPhs(instance);
       int count = 0;
       if(title != null && title.equals(studyName)){
         count +=1;
@@ -66,7 +69,7 @@ public class DataFileAccuracyEvaluator {
             new JsonValidationResult(
                 phs,
                 path.getFileName().toString(),
-                title,
+                InstanceArtifactPath.TITLE_PATH.getPath().substring(1),
                 IssueTypeMapping.IssueType.ACCURACY,
                 "Should be the title of the data file not the study",
                 null,

@@ -2,6 +2,9 @@ package bmir.radx.metadata.evaluator.study;
 
 import bmir.radx.metadata.evaluator.EvaluationMetric;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
+import bmir.radx.metadata.evaluator.result.JsonValidationResult;
+import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
+import bmir.radx.metadata.evaluator.result.ValidationSummary;
 import bmir.radx.metadata.evaluator.sharedComponents.CompletionRateChecker;
 import bmir.radx.metadata.evaluator.util.FieldCategory;
 import bmir.radx.metadata.evaluator.util.TemplateGetter;
@@ -26,10 +29,11 @@ public class StudyCompletenessEvaluator {
     this.templateGetter = templateGetter;
   }
 
-  public void evaluate(List<StudyMetadataRow> rows, Consumer<EvaluationResult> consumer) {
+  public void evaluate(List<StudyMetadataRow> rows, Consumer<EvaluationResult> consumer, ValidationSummary<SpreadsheetValidationResult> validationSummary) {
     var templateSchemaArtifact = templateGetter.getStudyTemplate();
 
     Map<FieldCategory, Map<Integer, Integer>> completenessDistribution = completionRateChecker.initializeCompletenessDistribution();
+    Map<FieldCategory, Map<String, List<Double>>> completeness = new HashMap<>();
 
     if (!rows.isEmpty()) {
       var result = completionRateChecker.getSpreadsheetRowCompleteness(rows.get(0), templateSchemaArtifact);
@@ -41,6 +45,8 @@ public class StudyCompletenessEvaluator {
       for (var row : rows) {
         result = completionRateChecker.getSpreadsheetRowCompleteness(row, templateSchemaArtifact);
         completionRateChecker.updateCompletenessDistribution(result, completenessDistribution);
+        completionRateChecker.updateCompleteness(result, completeness, row.studyPHS());
+        completionRateChecker.add2Database(result, row.studyPHS(), row.rowNumber(), validationSummary);
       }
 
       Map<EvaluationMetric, Integer> basicInfoResults = Map.of(
@@ -52,13 +58,24 @@ public class StudyCompletenessEvaluator {
       );
       basicInfoResults.forEach((key, value) -> consumer.accept(new EvaluationResult(BASIC_INFO, key, value)));
 
+      // Completeness
       Map<FieldCategory, EvaluationMetric> completenessKeys = Map.of(
+          REQUIRED, REQUIRED_FIELDS_COMPLETENESS,
+          RECOMMENDED, RECOMMENDED_FIELDS_COMPLETENESS,
+          OPTIONAL, OPTIONAL_FIELDS_COMPLETENESS,
+          OVERALL, OVERALL_COMPLETENESS
+      );
+      completenessKeys.forEach((requirement, key) ->
+          consumer.accept(new EvaluationResult(COMPLETENESS, key, completeness.get(requirement)))
+      );
+
+      Map<FieldCategory, EvaluationMetric> completenessDistributionKeys = Map.of(
           REQUIRED, REQUIRED_FIELDS_COMPLETENESS_DISTRIBUTION,
           RECOMMENDED, RECOMMENDED_FIELDS_COMPLETENESS_DISTRIBUTION,
           OPTIONAL, OPTIONAL_FIELDS_COMPLETENESS_DISTRIBUTION,
           OVERALL, OVERALL_COMPLETENESS_DISTRIBUTION
       );
-      completenessKeys.forEach((requirement, key) ->
+      completenessDistributionKeys.forEach((requirement, key) ->
           consumer.accept(new EvaluationResult(COMPLETENESS, key, completenessDistribution.get(requirement)))
       );
     }

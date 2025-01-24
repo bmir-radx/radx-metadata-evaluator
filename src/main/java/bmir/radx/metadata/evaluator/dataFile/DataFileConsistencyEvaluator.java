@@ -3,6 +3,7 @@ package bmir.radx.metadata.evaluator.dataFile;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.result.JsonValidationResult;
 import bmir.radx.metadata.evaluator.result.ValidationSummary;
+import bmir.radx.metadata.evaluator.util.IssueTypeMapping;
 import bmir.radx.metadata.evaluator.util.StudyPhsGetter;
 import com.tupilabs.human_name_parser.HumanNameParserBuilder;
 import com.tupilabs.human_name_parser.HumanNameParserParser;
@@ -16,7 +17,6 @@ import java.util.function.Consumer;
 
 import static bmir.radx.metadata.evaluator.EvaluationCriterion.CONSISTENCY;
 import static bmir.radx.metadata.evaluator.EvaluationMetric.*;
-import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.IssueType.INCONSISTENCY;
 
 @Component
 public class DataFileConsistencyEvaluator {
@@ -31,15 +31,22 @@ public class DataFileConsistencyEvaluator {
     private static final String CONTRIBUTOR_FAMILY_NAME = "Contributor Family Name";
     private static final String CONTRIBUTOR_TYPE = "Contributor Type";
     private final StudyPhsGetter studyPhsGetter;
+    private final StudyDataFileCrossEvaluator studyDataFileCrossEvaluator;
 
-    public DataFileConsistencyEvaluator(StudyPhsGetter studyPhsGetter) {
+    public DataFileConsistencyEvaluator(StudyPhsGetter studyPhsGetter, StudyDataFileCrossEvaluator studyDataFileCrossEvaluator) {
         this.studyPhsGetter = studyPhsGetter;
+        this.studyDataFileCrossEvaluator = studyDataFileCrossEvaluator;
     }
 
-    public void evaluate(Map<Path, TemplateInstanceArtifact> templateInstanceArtifacts,
+    public void evaluate(Optional<Path> studyPath,
+                         Map<Path, TemplateInstanceArtifact> templateInstanceArtifacts,
                          Consumer<EvaluationResult> consumer,
                          ValidationSummary<JsonValidationResult> validationSummary){
         Set<String> inconsistentInstances = new HashSet<>();
+
+        //cross-check study metadata vs data file metadata if study path is provided
+        studyPath.ifPresent(path -> studyDataFileCrossEvaluator.evaluate(path, inconsistentInstances, templateInstanceArtifacts, validationSummary));
+
         for(var instance : templateInstanceArtifacts.entrySet()){
             var errors = validationSummary.getValidationResults().size();
             var filePath = instance.getKey();
@@ -103,7 +110,10 @@ public class DataFileConsistencyEvaluator {
                 String parsedFirstName = parser.getFirst();
                 String parsedFamilyName = parser.getLast();
                 String parsedMiddleName = parser.getMiddle();
-                String parsedGivenName = parsedFirstName + " " + parsedMiddleName;
+                String parsedGivenName = parsedFirstName;
+                if(parsedMiddleName != null && !parsedMiddleName.equals("")){
+                    parsedGivenName += " " + parsedMiddleName;
+                }
 
                 processIncorrectName(name.get(), Optional.of(parsedFamilyName), familyName, i, studyPhs, fileName, element, familyNameField, validationSummary);
                 processIncorrectName(name.get(), Optional.of(parsedGivenName), givenName, i, studyPhs, fileName, element, givenNameField, validationSummary);
@@ -117,7 +127,7 @@ public class DataFileConsistencyEvaluator {
             var pointer = getPointer(i, elementName, fieldName);
             var errorMessage = getErrorMessage(fullName, providedName.orElse(null), fieldName);
             validationSummary.updateValidationResult(
-                new JsonValidationResult(studyPhs, fileName, pointer, INCONSISTENCY, errorMessage, parsedName.orElse(null), providedName.get())
+                new JsonValidationResult(studyPhs, fileName, pointer, IssueTypeMapping.IssueType.CONSISTENCY, errorMessage, parsedName.orElse(null), providedName.get())
             );
         }
     }

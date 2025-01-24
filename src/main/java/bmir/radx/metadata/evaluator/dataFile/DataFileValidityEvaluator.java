@@ -104,7 +104,7 @@ public class DataFileValidityEvaluator {
     for(var result: report.results()){
       if(result.validationLevel().equals(ValidationLevel.ERROR)){
         errorCount += 1;
-        var pointer = result.pointer();
+        var pointer = result.pointer().replace("\"", "").substring(1);
         var value = JsonInstanceValueGetter.getValue(instanceArtifact, pointer);
         errors.add(new JsonValidationResult(
             studyPhs,

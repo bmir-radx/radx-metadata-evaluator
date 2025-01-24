@@ -44,18 +44,17 @@ public enum EvaluationMetric {
   NUMBER_OF_INCONSISTENT_RECORDS("Number of Inconsistent Records"),
   NUMBER_OF_INCORRECT_CORE_CDES("Number Of Incorrect Core CDEs"),
   NUMBER_OF_INVALID_RECORDS("Number of Invalid RECORDS"),
-
   NUMBER_OF_TIER_1_CDES("Number Of Tier 1 CDEs"),
   NUMBER_OF_VALIDATION_ERRORS("Number of Validation Errors"),
+  OPTIONAL_FIELDS_COMPLETENESS("Optional Fields Completeness"),
   OPTIONAL_FIELDS_COMPLETENESS_DISTRIBUTION("Optional Fields Completeness Distribution"),
-  OPTIONAL_FIELDS_COMPLETION_RATE("Optional Fields Completion Rate"),
   OPTIONAL_FIELDS_PER_RECORD("Optional Fields Per Record"),
+  OVERALL_COMPLETENESS("Overall Completeness"),
   OVERALL_COMPLETENESS_DISTRIBUTION("Overall Completeness Distribution"),
-  OVERALL_COMPLETION_RATE("Overall Completion Rate"),
+  RECOMMENDED_FIELDS_COMPLETENESS("Recommended Fields Completeness"),
   RECOMMENDED_FIELDS_COMPLETENESS_DISTRIBUTION("Recommended Fields Completeness Distribution"),
-  RECOMMENDED_FIELDS_COMPLETION_RATE("Recommended Fields Completion Rate"),
+  REQUIRED_FIELDS_COMPLETENESS("Required Fields Completeness"),
   REQUIRED_FIELDS_COMPLETENESS_DISTRIBUTION("Required Fields Completeness Distribution"),
-  REQUIRED_FIELDS_COMPLETION_RATE("Required Fields Completion Rate"),
   RESOLVABLE_URL_RATE("Resolvable URL Rate"),
   TOTAL_FIELDS_PER_RECORD("Total Fields Per Record"),
   TOTAL_FILLED_FIELDS("Total Filled Fields"),
@@ -66,7 +65,6 @@ public enum EvaluationMetric {
   UNIQUENESS_RATE("Uniqueness Rate"),
   URL_COUNT_DISTRIBUTION("URL Count Distribution"),
   VALIDATION_ERROR("Validation Error"),
-
   VALIDATION_PASS_RATE("Validation Pass Rate");
 
 

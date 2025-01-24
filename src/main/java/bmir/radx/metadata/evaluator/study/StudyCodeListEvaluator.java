@@ -1,5 +1,6 @@
 package bmir.radx.metadata.evaluator.study;
 
+import bmir.radx.metadata.evaluator.SpreadsheetHeaders;
 import bmir.radx.metadata.evaluator.SpreadsheetReader;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
@@ -26,8 +27,8 @@ public class StudyCodeListEvaluator {
 
   public void check(List<StudyMetadataRow> rows, Consumer<EvaluationResult> consumer, ValidationSummary<SpreadsheetValidationResult> validationSummary){
     //read spreadsheet, get the value sets map <String, set<String>>
-    var codeListValues = spreadsheetReader.readCodeListValues(CODE_LISTS_SHEET_NAME, old_value_column);
-
+//    var codeListValues = spreadsheetReader.readCodeListValues(CODE_LISTS_SHEET_NAME, old_value_column);
+    var codeListValues = spreadsheetReader.readCodeListValues(NEW_CODE_LISTS_SHEET_NAME, new_value_column);
     var fields = StudyMetadataRow.class.getDeclaredFields();
 
     for (var row: rows){
@@ -36,7 +37,7 @@ public class StudyCodeListEvaluator {
         try{
           String fieldName = field.getName();
           Object fieldValue = field.get(row);
-          if(codeListValues.containsKey(fieldName)){
+          if(codeListValues.containsKey(fieldName) && !fieldName.equals("multiCenterStudy") && !fieldName.equals("species")){
             Set<String> validValues = codeListValues.get(fieldName);
             if(fieldValue!= null){
               checkSingleCellValue(fieldName, row.rowNumber(), row.studyPHS(), fieldValue.toString(), validValues, validationSummary);

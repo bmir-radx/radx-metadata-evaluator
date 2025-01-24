@@ -5,6 +5,7 @@ import bmir.radx.metadata.evaluator.IssueLevel;
 import bmir.radx.metadata.evaluator.result.EvaluationResult;
 import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
 import bmir.radx.metadata.evaluator.result.ValidationSummary;
+import bmir.radx.metadata.evaluator.thirdParty.rePORTER.PI;
 import bmir.radx.metadata.evaluator.thirdParty.rePORTER.RePORTERService;
 import bmir.radx.metadata.evaluator.util.IssueTypeMapping;
 import com.tupilabs.human_name_parser.HumanNameParserBuilder;
@@ -90,7 +91,7 @@ public class StudyAccuracyEvaluator {
       String[] grantNumbers = nihGrantNumbers.split(",");
       Set<String> foaSet = new HashSet<>();
       Set<String> nihSet = new HashSet<>();
-      Set<String> contactPIName = new HashSet<>();
+      Set<String> pINames = new HashSet<>();
       boolean contactPIFound = false;
 
       for (String nihGrantNumber : grantNumbers) {
@@ -106,17 +107,18 @@ public class StudyAccuracyEvaluator {
             System.err.println( row.studyPHS() + " retrieved multiple results from RePORTER using NIH grant number: " + row.nihGrantNumber());
           }
 
-          // Iterate over results to find matching contact PI name and collect all values of FOA number and NIH institution
+          // Iterate over results to collect all values of PI name, FOA number and NIH institution
           for (var result : results) {
-            contactPIName.add(result.contactPIName());
-            if (sameName(result.contactPIName(), row.contactPiProjectLeader())) {
-              contactPIFound  = true;
-            }
+//            pINames.add(result.contactPIName());
+            pINames.addAll(result.pINames().stream()
+                .map(PI::fullName)
+                .filter(Objects::nonNull)
+                .toList());
 
-            // Add FOA Number and NIH to the sets
             if (result.foaNumber() != null) {
               foaSet.add(result.foaNumber());
             }
+
             if (result.nihic() != null && result.nihic().nih() != null) {
               nihSet.add(result.nihic().nih());
             }
@@ -124,12 +126,12 @@ public class StudyAccuracyEvaluator {
         }
       }
 
-      //Check Contact PI in the study metadata row is in Contact PI Name set
-      var contactPINameProvided = row.contactPiProjectLeader();
-      if(contactPINameProvided != null && !contactPINameProvided.isEmpty() && !contactPIFound){
-        String errorMessage = getErrorMessage(CONTACT_PI_PROJECT_LEADER);
-        updateValidationSummary(row.rowNumber(), row.studyPHS(), CONTACT_PI_PROJECT_LEADER.getHeaderName(), contactPINameProvided, String.join("; ", contactPIName), validationSummary, REVIEW_NEEDED, errorMessage);
-      }
+//      //Check Contact PI in the study metadata row is in Contact PI Name set
+//      var contactPINameProvided = row.contactPiProjectLeader();
+//      if(contactPINameProvided != null && !contactPINameProvided.isEmpty() && !foundPIName(pINames, row.contactPiProjectLeader())){
+//        String errorMessage = getErrorMessage(CONTACT_PI_PROJECT_LEADER);
+//        updateValidationSummary(row.rowNumber(), row.studyPHS(), CONTACT_PI_PROJECT_LEADER.getHeaderName(), contactPINameProvided, String.join("; ", pINames), validationSummary, REVIEW_NEEDED, errorMessage);
+//      }
 
       // Check if FOA in the study metadata row is in the FOA set
       var foaNumberProvided = row.foaNumber();
@@ -156,7 +158,66 @@ public class StudyAccuracyEvaluator {
           .collect(Collectors.toSet());
       if (!nihICProvided.isEmpty() && !rowNIHSet.equals(nihSet)) {
         String errorMessage = getErrorMessage(NIH_INSTITUTE_OR_CENTER);
-        updateValidationSummary(row.rowNumber(), row.studyPHS(), NIH_INSTITUTE_OR_CENTER.getHeaderName(), row.nihInstituteOrCenter(), String.join("; ", nihSet), validationSummary, IssueLevel.ERROR, errorMessage);
+        updateValidationSummary(row.rowNumber(), row.studyPHS(), NIH_INSTITUTE_OR_CENTER.getHeaderName(), row.nihInstituteOrCenter(), String.join("; ", nihSet), validationSummary, REVIEW_NEEDED, errorMessage);
+      }
+    }
+  }
+
+  private void checkDates(StudyMetadataRow row, ValidationSummary<SpreadsheetValidationResult> validationSummary) {
+    var phs = row.studyPHS();
+    var startDate = row.studyStartDate();
+    var endDate = row.studyEndDate();
+    var releaseDate = row.studyReleaseDate();
+    var updateDate = row.updatedAt();
+
+    // Check if start date is after end date
+    if (startDate != null && endDate != null) {
+      if (startDate.after(endDate)) {
+        String errorMessage = "Start date (" + startDate + ") is after end date (" + endDate + ").";
+        updateValidationSummary(
+            row.rowNumber(),
+            row.studyPHS(),
+            STUDY_START_DATE.getHeaderName(),
+            startDate.toString(),
+            "",
+            validationSummary,
+            IssueLevel.ERROR,
+            errorMessage
+        );
+      }
+    }
+
+    // Check if start date is earlier than release date
+    if (startDate != null && releaseDate != null) {
+      if (startDate.after(releaseDate)) {
+        String errorMessage = "Start date (" + startDate + ") is after release date (" + releaseDate + ").";
+        updateValidationSummary(
+            row.rowNumber(),
+            phs,
+            STUDY_RELEASE_DATE.getHeaderName(),
+            startDate.toString(),
+            "",
+            validationSummary,
+            IssueLevel.ERROR,
+            errorMessage
+        );
+      }
+    }
+
+    // Check if update date is earlier than release date
+    if (updateDate != null && releaseDate != null) {
+      if (releaseDate.after(updateDate)) {
+        String errorMessage = "Release date (" + releaseDate + ") is after update date (" + updateDate + ").";
+        updateValidationSummary(
+            row.rowNumber(),
+            phs,
+            UPDATED_AT.getHeaderName(),
+            updateDate.toString(),
+            "",
+            validationSummary,
+            REVIEW_NEEDED,
+            errorMessage
+        );
       }
     }
   }
@@ -178,6 +239,16 @@ public class StudyAccuracyEvaluator {
 
     return isIdentical(firstName1.toLowerCase(), firstName2.toLowerCase())
         && isIdentical(lastName1.toLowerCase(), lastName2.toLowerCase());
+  }
+
+  private boolean foundPIName(Set<String> pINames, String providedName){
+    boolean found = false;
+    for(String name: pINames){
+      if(sameName(name, providedName)){
+        found = true;
+      }
+    }
+    return found;
   }
 
   private void updateValidationSummary(Integer rowNumber, String studyPHS, String columnName, String columnValue, String suggestion, ValidationSummary<SpreadsheetValidationResult> validationSummary, IssueLevel issueLevel, String message){

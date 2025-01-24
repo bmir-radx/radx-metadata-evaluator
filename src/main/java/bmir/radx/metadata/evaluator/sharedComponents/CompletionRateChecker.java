@@ -1,11 +1,17 @@
 package bmir.radx.metadata.evaluator.sharedComponents;
 
+import bmir.radx.metadata.evaluator.IssueLevel;
 import bmir.radx.metadata.evaluator.dataFile.FieldsCollector;
 import bmir.radx.metadata.evaluator.dataFile.RecommendedFields;
+import bmir.radx.metadata.evaluator.result.JsonValidationResult;
+import bmir.radx.metadata.evaluator.result.SpreadsheetValidationResult;
+import bmir.radx.metadata.evaluator.result.ValidationSummary;
 import bmir.radx.metadata.evaluator.util.FieldCategory;
+import bmir.radx.metadata.evaluator.util.IssueTypeMapping;
 import edu.stanford.bmir.radx.metadata.validator.lib.AttributeValueFieldValues;
 import edu.stanford.bmir.radx.metadata.validator.lib.FieldValues;
 import edu.stanford.bmir.radx.metadata.validator.lib.TemplateInstanceValuesReporter;
+import jdk.jshell.SourceCodeAnalysis;
 import org.metadatacenter.artifacts.model.core.ElementSchemaArtifact;
 import org.metadatacenter.artifacts.model.core.TemplateSchemaArtifact;
 import org.metadatacenter.artifacts.model.core.fields.constraints.ValueConstraints;
@@ -18,6 +24,7 @@ import static bmir.radx.metadata.evaluator.sharedComponents.DistributionManager.
 import static bmir.radx.metadata.evaluator.study.FieldNameStandardizer.getStandardizedMap;
 import static bmir.radx.metadata.evaluator.study.FieldNameStandardizer.standardizeFieldName;
 import static bmir.radx.metadata.evaluator.util.FieldCategory.*;
+import static bmir.radx.metadata.evaluator.util.IssueTypeMapping.getIssueType;
 
 @Component
 public class CompletionRateChecker {
@@ -102,6 +109,62 @@ public class CompletionRateChecker {
     }
   }
 
+  public void updateCompleteness(CompletionResult result, Map<FieldCategory, Map<String, List<Double>>> completeness, String phs){
+    var rates = result.completionRates();
+    for (FieldCategory category : FieldCategory.values()) {
+      double rate = rates.getOrDefault(category, 0.0);
+      // Ensure the inner map for this category exists
+      completeness.computeIfAbsent(category, k -> new HashMap<>());
+
+      // Ensure the list for this (category, phs) pair exists
+      completeness.get(category).computeIfAbsent(phs, p -> new ArrayList<>());
+
+      // Add the rate to the existing list
+      completeness.get(category).get(phs).add(rate);
+    }
+  }
+
+  public void add2Database(CompletionResult result, String phs, String fileName, ValidationSummary<JsonValidationResult> validationSummary){
+    var rates = result.completionRates();
+    for (FieldCategory category : FieldCategory.values()) {
+      double rate = rates.getOrDefault(category, 0.0) * 100;
+      String formattedRate = String.format("%.2f%%", rate);
+      validationSummary.updateValidationResult(
+          new JsonValidationResult(
+              phs,
+              fileName,
+              "",
+              getIssueType(category),
+              String.format("%s Fields Completeness is: %s", category.getCategory(), formattedRate),
+              null,
+              IssueLevel.INFO,
+              null
+          )
+      );
+    }
+  }
+
+  public void add2Database(CompletionResult result, String phs, int row, ValidationSummary<SpreadsheetValidationResult> validationSummary){
+    var rates = result.completionRates();
+    for (FieldCategory category : FieldCategory.values()) {
+      double rate = rates.getOrDefault(category, 0.0) * 100;
+      String formattedRate = String.format("%.2f%%", rate);
+      validationSummary.updateValidationResult(
+          new SpreadsheetValidationResult(
+              getIssueType(category),
+              null,
+              row,
+              phs,
+              null,
+              null,
+              IssueLevel.INFO,
+              String.format("%s Fields Completeness is: %s", category.getCategory(), formattedRate)
+          )
+      );
+    }
+  }
+
+
   public CompletionResult getSingleDataFileCompleteness(TemplateSchemaArtifact templateSchemaArtifact, TemplateInstanceValuesReporter templateInstanceValuesReporter){
     var templateReporter = new TemplateReporter(templateSchemaArtifact);
     var values = templateInstanceValuesReporter.getValues();
@@ -160,11 +223,10 @@ public class CompletionRateChecker {
     int totalFilledFieldCount = filledRequiredFieldCount + filledRecommendedFieldCount + filledOptionalFieldCount;
 
     Map<FieldCategory, Double> completionRates = new HashMap<>();
-    var requiredCompleteness = ((double)filledRequiredFieldCount/requiredFieldCount) * 100;
-    var recommendedCompleteness = ((double)filledRecommendedFieldCount/recommendedFieldCount) * 100;
-    var optionalCompleteness = ((double) filledOptionalFieldCount/ optionalFieldCount) * 100;
-    var overallCompleteness = ((double) totalFilledFieldCount / totalFieldCount) * 100;
-    var elementCompleteness = ((double) filledElementCount / elementCount) * 100;
+    var requiredCompleteness = (double)filledRequiredFieldCount/requiredFieldCount;
+    var recommendedCompleteness = (double)filledRecommendedFieldCount/recommendedFieldCount;
+    var optionalCompleteness = (double) filledOptionalFieldCount/ optionalFieldCount;
+    var overallCompleteness = (double) totalFilledFieldCount / totalFieldCount;
     completionRates.put(REQUIRED, requiredCompleteness);
     completionRates.put(RECOMMENDED, recommendedCompleteness);
     completionRates.put(OPTIONAL, optionalCompleteness);
@@ -250,19 +312,28 @@ public class CompletionRateChecker {
   }
 
   private FieldCategory getRequirement(String fieldName, TemplateSchemaArtifact templateSchemaArtifact){
-    var templateReporter = new TemplateReporter(templateSchemaArtifact);
-    var standardizedMap = getStandardizedMap(templateSchemaArtifact);
-    var fieldPath = "/" + standardizedMap.get(standardizeFieldName(fieldName));
-    var fieldArtifact = templateReporter.getFieldSchema(fieldPath);
-    if(fieldArtifact.isEmpty()){
+//    var templateReporter = new TemplateReporter(templateSchemaArtifact);
+//    var standardizedMap = getStandardizedMap(templateSchemaArtifact);
+//    var fieldPath = "/" + standardizedMap.get(standardizeFieldName(fieldName));
+//    var fieldArtifact = templateReporter.getFieldSchema(fieldPath);
+//    if(fieldArtifact.isEmpty()){
+//      return null;
+//    }
+//    if(fieldArtifact.get().requiredValue()){
+//      return REQUIRED;
+//    } else if (fieldArtifact.get().valueConstraints().get().recommendedValue()) {
+//      return FieldCategory.RECOMMENDED;
+//    } else{
+//      return FieldCategory.OPTIONAL;
+//    }
+
+    var requiredFields = List.of("studyProgram", "studyPHS", "studyTitle", "studyDesign", "dataTypes", "studyDomain", "nihInstituteOrCenter", "consentDataUseLimitations", "studyStatus", "hasDataFiles");
+    if(fieldName.equals("rowNumber")){
       return null;
-    }
-    if(fieldArtifact.get().requiredValue()){
+    } else if (requiredFields.contains(fieldName)) {
       return REQUIRED;
-    } else if (fieldArtifact.get().valueConstraints().get().recommendedValue()) {
-      return FieldCategory.RECOMMENDED;
     } else{
-      return FieldCategory.OPTIONAL;
+      return RECOMMENDED;
     }
   }
 }

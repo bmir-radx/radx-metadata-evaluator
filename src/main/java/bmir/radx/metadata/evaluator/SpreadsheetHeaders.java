@@ -39,7 +39,7 @@ public enum SpreadsheetHeaders implements Header{
   DATA_TYPES("data_general_types"),
   STUDY_DOMAIN("topics"),
   NIH_INSTITUTE_OR_CENTER("institutes_supporting_study"),
-  MULTI_CENTER_STUDY("multi_center"),
+  MULTI_CENTER_STUDY("is_multi_center"),
   MULTI_CENTER_SITES("multi_center_sites"),
   KEYWORDS("subject"),
   DATA_COLLECTION_METHOD("source"),
